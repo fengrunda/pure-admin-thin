@@ -53,19 +53,19 @@ function hoverDescription(event, description) {
   >
     <el-avatar
       v-if="noticeItem.avatar"
+      class="notice-container-avatar"
       :size="30"
       :src="noticeItem.avatar"
-      class="notice-container-avatar"
     />
     <div class="notice-container-text">
       <div class="notice-text-title text-[#000000d9] dark:text-white">
         <el-tooltip
-          popper-class="notice-title-popper"
-          :effect="tooltipEffect"
-          :disabled="!titleTooltip"
           :content="noticeItem.title"
-          placement="top-start"
+          :disabled="!titleTooltip"
+          :effect="tooltipEffect"
           :enterable="!isMobile"
+          placement="top-start"
+          popper-class="notice-title-popper"
         >
           <div
             ref="titleRef"
@@ -77,20 +77,20 @@ function hoverDescription(event, description) {
         </el-tooltip>
         <el-tag
           v-if="noticeItem?.extra"
-          :type="noticeItem?.status"
-          size="small"
           class="notice-title-extra"
+          size="small"
+          :type="noticeItem?.status"
         >
           {{ noticeItem?.extra }}
         </el-tag>
       </div>
 
       <el-tooltip
-        popper-class="notice-title-popper"
-        :effect="tooltipEffect"
-        :disabled="!descriptionTooltip"
         :content="noticeItem.description"
+        :disabled="!descriptionTooltip"
+        :effect="tooltipEffect"
         placement="top-start"
+        popper-class="notice-title-popper"
       >
         <div
           ref="descriptionRef"

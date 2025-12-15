@@ -153,8 +153,8 @@ defineExpose({ handleScroll });
       >
         <SearchHistoryItem
           :item="item"
-          @delete-item="handleDelete"
           @collect-item="handleCollect"
+          @delete-item="handleDelete"
         />
       </div>
     </template>

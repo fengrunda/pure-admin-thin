@@ -116,6 +116,12 @@ const transitionMain = defineComponent({
           <template #default="{ Comp, fullPath, frameInfo }">
             <el-scrollbar
               v-if="fixedHeader"
+              :view-style="{
+                display: 'flex',
+                flex: 'auto',
+                overflow: 'hidden',
+                'flex-direction': 'column'
+              }"
               :wrap-style="{
                 display: 'flex',
                 'flex-wrap': 'wrap',
@@ -123,16 +129,10 @@ const transitionMain = defineComponent({
                 margin: '0 auto',
                 transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
               }"
-              :view-style="{
-                display: 'flex',
-                flex: 'auto',
-                overflow: 'hidden',
-                'flex-direction': 'column'
-              }"
             >
               <el-backtop
-                title="回到顶部"
                 target=".app-main .el-scrollbar__wrap"
+                title="回到顶部"
               >
                 <BackTopIcon />
               </el-backtop>
@@ -145,16 +145,16 @@ const transitionMain = defineComponent({
                     <component
                       :is="Comp"
                       :key="fullPath"
-                      :frameInfo="frameInfo"
                       class="main-content"
+                      :frameInfo="frameInfo"
                     />
                   </keep-alive>
                   <component
                     :is="Comp"
                     v-else
                     :key="fullPath"
-                    :frameInfo="frameInfo"
                     class="main-content"
+                    :frameInfo="frameInfo"
                   />
                 </transitionMain>
               </div>
@@ -169,16 +169,16 @@ const transitionMain = defineComponent({
                   <component
                     :is="Comp"
                     :key="fullPath"
-                    :frameInfo="frameInfo"
                     class="main-content"
+                    :frameInfo="frameInfo"
                   />
                 </keep-alive>
                 <component
                   :is="Comp"
                   v-else
                   :key="fullPath"
-                  :frameInfo="frameInfo"
                   class="main-content"
+                  :frameInfo="frameInfo"
                 />
               </transitionMain>
             </div>

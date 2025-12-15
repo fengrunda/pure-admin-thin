@@ -62,9 +62,9 @@ onBeforeUnmount(() => {
         >
           <IconifyIconOffline
             class="dark:text-white"
-            width="18px"
             height="18px"
             :icon="CloseIcon"
+            width="18px"
             @click="show = !show"
           />
         </span>
@@ -82,9 +82,9 @@ onBeforeUnmount(() => {
             placement: 'left-start',
             zIndex: 41000
           }"
-          type="danger"
-          text
           bg
+          text
+          type="danger"
           @click="onReset"
         >
           清空缓存

@@ -272,30 +272,30 @@ onKeyStroke("ArrowDown", handleDown);
 <template>
   <el-dialog
     v-model="show"
-    top="5vh"
+    append-to-body
+    :before-close="handleClose"
     class="pure-search-dialog"
     :show-close="false"
-    :width="device === 'mobile' ? '80vw' : '40vw'"
-    :before-close="handleClose"
     :style="{
       borderRadius: '6px'
     }"
-    append-to-body
-    @opened="inputRef.focus()"
+    top="5vh"
+    :width="device === 'mobile' ? '80vw' : '40vw'"
     @closed="inputRef.blur()"
+    @opened="inputRef.focus()"
   >
     <el-input
       ref="inputRef"
       v-model="keyword"
-      size="large"
       clearable
       placeholder="搜索菜单（支持拼音搜索）"
+      size="large"
       @input="handleSearch"
     >
       <template #prefix>
         <IconifyIconOffline
-          :icon="SearchIcon"
           class="text-primary w-[24px] h-[24px]"
+          :icon="SearchIcon"
         />
       </template>
     </el-input>
@@ -308,8 +308,8 @@ onKeyStroke("ArrowDown", handleDown);
           v-model:value="historyPath"
           :options="historyOptions"
           @click="handleEnter"
-          @delete="handleDelete"
           @collect="handleCollect"
+          @delete="handleDelete"
           @drag="handleDrag"
         />
         <SearchResult

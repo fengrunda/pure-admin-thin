@@ -53,21 +53,21 @@ onMounted(() => {
     class="horizontal-header"
   >
     <div v-if="showLogo" class="horizontal-header-left" @click="backTopMenu">
-      <img :src="getLogo()" alt="logo" />
+      <img alt="logo" :src="getLogo()" />
       <span>{{ title }}</span>
     </div>
     <el-menu
       ref="menuRef"
-      mode="horizontal"
-      popper-class="pure-scrollbar"
       class="horizontal-header-menu"
       :default-active="defaultActive"
+      mode="horizontal"
+      popper-class="pure-scrollbar"
     >
       <LaySidebarItem
         v-for="route in usePermissionStoreHook().wholeMenus"
         :key="route.path"
-        :item="route"
         :base-path="route.path"
+        :item="route"
       />
     </el-menu>
     <div class="horizontal-header-right">

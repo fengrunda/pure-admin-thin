@@ -49,8 +49,8 @@ const toggleClick = () => {
         hideOnClick: 'toggle',
         placement: 'right'
       }"
-      :icon="MenuFold"
       :class="[iconClass, themeColor === 'light' ? '' : 'text-primary']"
+      :icon="MenuFold"
       :style="{ transform: isActive ? 'none' : 'rotateY(180deg)' }"
       @click="toggleClick"
     />

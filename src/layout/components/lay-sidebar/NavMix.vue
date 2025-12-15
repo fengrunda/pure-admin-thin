@@ -61,11 +61,11 @@ watch(
   >
     <el-menu
       ref="menuRef"
-      router
-      mode="horizontal"
-      popper-class="pure-scrollbar"
       class="horizontal-header-menu"
       :default-active="defaultActive"
+      mode="horizontal"
+      popper-class="pure-scrollbar"
+      router
     >
       <el-menu-item
         v-for="route in usePermissionStoreHook().wholeMenus"

@@ -67,13 +67,13 @@ watch(
   <template v-for="[fullPath, Comp] in compList" :key="fullPath">
     <div v-show="fullPath === currRoute.fullPath" class="w-full h-full">
       <slot
-        :fullPath="fullPath"
         :Comp="Comp"
         :frameInfo="{ frameSrc: currRoute.meta?.frameSrc, fullPath }"
+        :fullPath="fullPath"
       />
     </div>
   </template>
   <div v-show="!keep" class="w-full h-full">
-    <slot :Comp="normalComp" :fullPath="currRoute.fullPath" frameInfo />
+    <slot :Comp="normalComp" frameInfo :fullPath="currRoute.fullPath" />
   </div>
 </template>

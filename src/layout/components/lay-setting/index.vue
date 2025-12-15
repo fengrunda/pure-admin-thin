@@ -317,10 +317,10 @@ onUnmounted(() => removeMatchMedia);
     <div class="p-5">
       <p :class="pClass">整体风格</p>
       <Segmented
-        resize
         class="select-none"
         :modelValue="overallStyle === 'system' ? 2 : dataTheme ? 1 : 0"
         :options="themeOptions"
+        resize
         @change="
           theme => {
             theme.index === 1 && theme.index !== 2
@@ -343,9 +343,9 @@ onUnmounted(() => removeMatchMedia);
           @click="setLayoutThemeColor(item.themeColor)"
         >
           <el-icon
-            style="margin: 0.1em 0.1em 0 0"
-            :size="17"
             :color="getThemeColor(item.themeColor)"
+            :size="17"
+            style="margin: 0.1em 0.1em 0 0"
           >
             <IconifyIconOffline :icon="Check" />
           </el-icon>
@@ -397,18 +397,18 @@ onUnmounted(() => removeMatchMedia);
       <span v-if="useAppStoreHook().getViewportWidth > 1280">
         <p :class="['mt-5!', pClass]">页宽</p>
         <Segmented
-          resize
           class="mb-2 select-none"
           :modelValue="isNumber(settings.stretch) ? 1 : 0"
           :options="stretchTypeOptions"
+          resize
           @change="stretchTypeChange"
         />
         <el-input-number
           v-if="isNumber(settings.stretch)"
           v-model="settings.stretch as number"
-          :min="1280"
-          :max="1600"
           controls-position="right"
+          :max="1600"
+          :min="1280"
           @change="value => setStretch(value)"
         />
         <button
@@ -438,10 +438,10 @@ onUnmounted(() => removeMatchMedia);
 
       <p :class="['mt-4!', pClass]">页签风格</p>
       <Segmented
-        resize
         class="select-none"
         :modelValue="markValue === 'smart' ? 0 : markValue === 'card' ? 1 : 2"
         :options="markOptions"
+        resize
         @change="onChange"
       />
 
@@ -451,9 +451,9 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">灰色模式</span>
           <el-switch
             v-model="settings.greyVal"
-            inline-prompt
             active-text="开"
             inactive-text="关"
+            inline-prompt
             @change="greyChange"
           />
         </li>
@@ -461,9 +461,9 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">色弱模式</span>
           <el-switch
             v-model="settings.weakVal"
-            inline-prompt
             active-text="开"
             inactive-text="关"
+            inline-prompt
             @change="weekChange"
           />
         </li>
@@ -471,9 +471,9 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">隐藏标签页</span>
           <el-switch
             v-model="settings.tabsVal"
-            inline-prompt
             active-text="开"
             inactive-text="关"
+            inline-prompt
             @change="tagsChange"
           />
         </li>
@@ -481,9 +481,9 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">隐藏页脚</span>
           <el-switch
             v-model="settings.hideFooter"
-            inline-prompt
             active-text="开"
             inactive-text="关"
+            inline-prompt
             @change="hideFooterChange"
           />
         </li>
@@ -491,11 +491,11 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">Logo</span>
           <el-switch
             v-model="logoVal"
-            inline-prompt
-            :active-value="true"
-            :inactive-value="false"
             active-text="开"
+            :active-value="true"
             inactive-text="关"
+            :inactive-value="false"
+            inline-prompt
             @change="logoChange"
           />
         </li>
@@ -503,9 +503,9 @@ onUnmounted(() => removeMatchMedia);
           <span class="dark:text-white">页签持久化</span>
           <el-switch
             v-model="settings.multiTagsCache"
-            inline-prompt
             active-text="开"
             inactive-text="关"
+            inline-prompt
             @change="multiTagsCacheChange"
           />
         </li>

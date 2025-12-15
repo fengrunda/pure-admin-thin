@@ -16,7 +16,7 @@ defineOptions({
       *:*:* 代表拥有全部按钮级别权限
     </p>
 
-    <el-card shadow="never" class="mb-2">
+    <el-card class="mb-2" shadow="never">
       <template #header>
         <div class="card-header">组件方式判断权限</div>
       </template>
@@ -46,7 +46,7 @@ defineOptions({
       </el-space>
     </el-card>
 
-    <el-card shadow="never" class="mb-2">
+    <el-card class="mb-2" shadow="never">
       <template #header>
         <div class="card-header">函数方式判断权限</div>
       </template>

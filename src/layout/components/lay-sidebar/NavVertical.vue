@@ -95,25 +95,25 @@ onBeforeUnmount(() => {
   >
     <LaySidebarLogo v-if="showLogo" :collapse="isCollapse" />
     <el-scrollbar
-      wrap-class="scrollbar-wrapper"
       :class="[device === 'mobile' ? 'mobile' : 'pc']"
+      wrap-class="scrollbar-wrapper"
     >
       <el-menu
-        unique-opened
-        mode="vertical"
-        popper-class="pure-scrollbar"
         class="outer-most select-none"
         :collapse="isCollapse"
         :collapse-transition="false"
-        :popper-effect="tooltipEffect"
         :default-active="defaultActive"
+        mode="vertical"
+        popper-class="pure-scrollbar"
+        :popper-effect="tooltipEffect"
+        unique-opened
       >
         <LaySidebarItem
           v-for="routes in menuData"
           :key="routes.path"
-          :item="routes"
           :base-path="routes.path"
           class="outer-most select-none"
+          :item="routes"
         />
       </el-menu>
     </el-scrollbar>

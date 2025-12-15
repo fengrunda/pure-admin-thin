@@ -18,10 +18,6 @@ const router = useRouter();
       <p
         v-motion
         class="font-medium text-4xl mb-4! dark:text-white"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
         :enter="{
           opacity: 1,
           y: 0,
@@ -29,16 +25,16 @@ const router = useRouter();
             delay: 80
           }
         }"
+        :initial="{
+          opacity: 0,
+          y: 100
+        }"
       >
         500
       </p>
       <p
         v-motion
         class="text-xl mb-4! text-gray-500"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
         :enter="{
           opacity: 1,
           y: 0,
@@ -46,17 +42,16 @@ const router = useRouter();
             delay: 120
           }
         }"
+        :initial="{
+          opacity: 0,
+          y: 100
+        }"
       >
         抱歉，服务器出错了
       </p>
       <el-button
         v-motion
-        type="primary"
         class="block mx-auto md:inline-block md:mx-0"
-        :initial="{
-          opacity: 0,
-          y: 100
-        }"
         :enter="{
           opacity: 1,
           y: 0,
@@ -64,6 +59,11 @@ const router = useRouter();
             delay: 160
           }
         }"
+        :initial="{
+          opacity: 0,
+          y: 100
+        }"
+        type="primary"
         @click="router.push('/')"
       >
         返回首页

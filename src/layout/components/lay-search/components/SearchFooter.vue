@@ -19,8 +19,8 @@ const { device } = useNav();
       确认
     </span>
     <span class="search-footer-item">
-      <IconifyIconOffline :icon="ArrowUpLine" class="icon" />
-      <IconifyIconOffline :icon="ArrowDownLine" class="icon" />
+      <IconifyIconOffline class="icon" :icon="ArrowUpLine" />
+      <IconifyIconOffline class="icon" :icon="ArrowDownLine" />
       切换
     </span>
     <span class="search-footer-item">

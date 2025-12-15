@@ -90,14 +90,14 @@ useEventListener(document, "keydown", ({ code }) => {
 
 <template>
   <div class="select-none">
-    <img :src="bg" class="wave" />
+    <img class="wave" :src="bg" />
     <div class="flex-c absolute right-5 top-3">
       <!-- 主题 -->
       <el-switch
         v-model="dataTheme"
-        inline-prompt
         :active-icon="dayIcon"
         :inactive-icon="darkIcon"
+        inline-prompt
         @change="dataThemeChange"
       />
     </div>
@@ -120,6 +120,7 @@ useEventListener(document, "keydown", ({ code }) => {
           >
             <Motion :delay="100">
               <el-form-item
+                prop="username"
                 :rules="[
                   {
                     required: true,
@@ -127,7 +128,6 @@ useEventListener(document, "keydown", ({ code }) => {
                     trigger: 'blur'
                   }
                 ]"
-                prop="username"
               >
                 <el-input
                   v-model="ruleForm.username"
@@ -143,9 +143,9 @@ useEventListener(document, "keydown", ({ code }) => {
                 <el-input
                   v-model="ruleForm.password"
                   clearable
-                  show-password
                   placeholder="密码"
                   :prefix-icon="useRenderIcon(Lock)"
+                  show-password
                 />
               </el-form-item>
             </Motion>
@@ -153,10 +153,10 @@ useEventListener(document, "keydown", ({ code }) => {
             <Motion :delay="250">
               <el-button
                 class="w-full mt-4!"
+                :disabled="disabled"
+                :loading="loading"
                 size="default"
                 type="primary"
-                :loading="loading"
-                :disabled="disabled"
                 @click="onLogin(ruleFormRef)"
               >
                 登录

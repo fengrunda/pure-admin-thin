@@ -26,8 +26,8 @@ const toggleClick = () => {
     @click="toggleClick"
   >
     <IconifyIconOffline
-      :icon="isActive ? MenuFold : MenuUnfold"
       class="inline-block! align-middle hover:text-primary dark:hover:text-white!"
+      :icon="isActive ? MenuFold : MenuUnfold"
     />
   </div>
 </template>

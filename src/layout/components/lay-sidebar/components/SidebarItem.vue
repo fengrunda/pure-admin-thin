@@ -26,7 +26,8 @@ const { layout, isCollapse, tooltipEffect, getDivStyle } = useNav();
 
 const props = defineProps({
   item: {
-    type: Object as PropType<menuType>
+    type: Object as PropType<menuType>,
+    default: () => ({})
   },
   isNest: {
     type: Boolean,
@@ -127,8 +128,8 @@ function resolvePath(routePath) {
     :to="item"
   >
     <el-menu-item
-      :index="resolvePath(onlyOneChild.path)"
       :class="{ 'submenu-title-noDropdown': !isNest }"
+      :index="resolvePath(onlyOneChild.path)"
       :style="getNoDropdownStyle"
       v-bind="attrs"
     >
@@ -157,8 +158,8 @@ function resolvePath(routePath) {
             layout === 'mix' &&
             item?.pathList?.length === 2)
         "
-        truncated
         class="w-full! px-3! min-w-[54px]! text-center! text-inherit!"
+        truncated
       >
         {{ onlyOneChild.meta.title }}
       </el-text>
@@ -166,11 +167,11 @@ function resolvePath(routePath) {
       <template #title>
         <div :style="getDivStyle">
           <ReText
+            class="w-full! text-inherit!"
             :tippyProps="{
               offset: [0, -10],
               theme: tooltipEffect
             }"
-            class="w-full! text-inherit!"
           >
             {{ onlyOneChild.meta.title }}
           </ReText>
@@ -182,15 +183,15 @@ function resolvePath(routePath) {
   <el-sub-menu
     v-else
     ref="subMenu"
-    teleported
     :index="resolvePath(item.path)"
+    teleported
     v-bind="expandCloseIcon"
   >
     <template #title>
       <div
         v-if="toRaw(item.meta.icon)"
-        :style="getSubMenuIconStyle"
         class="sub-menu-icon"
+        :style="getSubMenuIconStyle"
       >
         <component :is="useRenderIcon(item.meta && toRaw(item.meta.icon))" />
       </div>
@@ -205,11 +206,11 @@ function resolvePath(routePath) {
                 item.parentId === null
               )
         "
+        :class="textClass"
         :tippyProps="{
           offset: [0, -10],
           theme: tooltipEffect
         }"
-        :class="textClass"
       >
         {{ item.meta.title }}
       </ReText>
@@ -219,10 +220,10 @@ function resolvePath(routePath) {
     <sidebar-item
       v-for="child in item.children"
       :key="child.path"
-      :is-nest="true"
-      :item="child"
       :base-path="resolvePath(child.path)"
       class="nest-menu"
+      :is-nest="true"
+      :item="child"
     />
   </el-sub-menu>
 </template>

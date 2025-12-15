@@ -9,7 +9,8 @@ defineOptions({
 const props = defineProps({
   // 行数
   lineClamp: {
-    type: [String, Number]
+    type: [String, Number],
+    default: 1
   },
   tippyProps: {
     type: Object as PropType<TippyOptions>,

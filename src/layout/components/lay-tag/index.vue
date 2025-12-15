@@ -578,18 +578,18 @@ onBeforeUnmount(() => {
       <div ref="tabDom" class="tab select-none" :style="getTabStyle">
         <div
           v-for="(item, index) in multiTags"
-          :ref="'dynamic' + index"
           :key="index"
+          :ref="'dynamic' + index"
           :class="[
             'scroll-item is-closable',
             linkIsActive(item),
             showModel === 'chrome' && 'chrome-item',
             isFixedTag(item) && 'fixed-tag'
           ]"
+          @click="tagOnClick(item)"
           @contextmenu.prevent="openMenu(item, $event)"
           @mouseenter.prevent="onMouseenter(index)"
           @mouseleave.prevent="onMouseleave(index)"
-          @click="tagOnClick(item)"
         >
           <template v-if="showModel !== 'chrome'">
             <span
@@ -641,10 +641,10 @@ onBeforeUnmount(() => {
     <transition name="el-zoom-in-top">
       <ul
         v-show="visible"
-        ref="contextmenuRef"
         :key="Math.random()"
-        :style="getContextMenuStyle"
+        ref="contextmenuRef"
         class="contextmenu"
+        :style="getContextMenuStyle"
       >
         <div
           v-for="(item, key) in tagsViews.slice(0, 6)"
@@ -660,12 +660,12 @@ onBeforeUnmount(() => {
     </transition>
     <!-- 右侧功能按钮 -->
     <el-dropdown
-      trigger="click"
       placement="bottom-end"
+      trigger="click"
       @command="handleCommand"
     >
       <span class="arrow-down">
-        <IconifyIconOffline :icon="ArrowDown" class="dark:text-white" />
+        <IconifyIconOffline class="dark:text-white" :icon="ArrowDown" />
       </span>
       <template #dropdown>
         <el-dropdown-menu>
@@ -673,8 +673,8 @@ onBeforeUnmount(() => {
             v-for="(item, key) in tagsViews"
             :key="key"
             :command="{ key, item }"
-            :divided="item.divided"
             :disabled="item.disabled"
+            :divided="item.divided"
           >
             <IconifyIconOffline :icon="item.icon" />
             {{ item.text }}
