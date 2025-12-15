@@ -152,10 +152,37 @@ export default defineConfig([
       "no-undef": "off",
       "no-unused-vars": "off",
       "vue/no-v-html": "off",
-      "vue/require-default-prop": "off",
-      "vue/require-explicit-emits": "off",
+      "vue/require-default-prop": "error",
+      "vue/require-explicit-emits": "error",
       "vue/multi-word-component-names": "off",
       "vue/no-setup-props-reactivity-loss": "off",
+      // 'vue/max-attributes-per-line': [
+      //   'error',
+      //   {
+      //     singleline: 3,
+      //     multiline: 1,
+      //   },
+      // ],
+      "vue/attributes-order": [
+        "warn",
+        {
+          order: [
+            "DEFINITION", // is, v-is
+            "LIST_RENDERING", // v-for
+            "CONDITIONALS", // v-if, v-else-if, v-else, v-show, v-cloak
+            "RENDER_MODIFIERS", // v-pre, v-once
+            "GLOBAL", // id
+            "UNIQUE", // ref, key, v-slot, slot
+            "SLOT", // v-slot, slot
+            "TWO_WAY_BINDING", // v-model
+            "OTHER_DIRECTIVES", // v-custom-directive
+            "OTHER_ATTR", // 普通 HTML 属性（如 class, style, data-*, aria-* 等）
+            "EVENTS", // v-on
+            "CONTENT" // v-text, v-html
+          ],
+          alphabetical: true // 在每个分类内按字母顺序排序
+        }
+      ],
       "vue/html-self-closing": [
         "error",
         {
