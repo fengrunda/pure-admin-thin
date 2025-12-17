@@ -1,0 +1,163 @@
+## pure-admin-thin 项目级 Cursor Rules（面向 AI）
+
+> 目标：让 AI 以最小改动快速定位“该改哪里、参考哪里、不要动哪里”。
+
+### 0. 输出与改动原则（强约束）
+- **输出语言**：中文（简体）
+- **最小交付**：只实现用户当前需求，避免顺手重构/顺手升级依赖
+- **最小改动**：优先在既有模块内修改；新增文件需说明理由
+- **函数式偏好**：纯函数优先；副作用（路由注册、store 写入、IO）集中在入口/动作层
+- **遵循既有约定**：路由 `name` 唯一且与页面 `defineOptions({ name })` 一致（影响 keepAlive/标签页）
+
+---
+
+### 1. 项目整体概览
+- **技术栈**：Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus
+- **UI/样式**：Element Plus + TailwindCSS（`src/style/tailwind.css`）+ 全局 SCSS（`src/style/*.scss`）
+- **网络层**：Axios 二次封装（`src/utils/http/index.ts`），内置 **JWT 无感刷新 token**
+- **权限模型（RBAC）**：
+  - 页面级：路由 `meta.roles` + 用户 `roles`
+  - 按钮级：
+    - 模式 A：路由 `meta.auths`（`hasAuth`）
+    - 模式 B：登录返回 `permissions`（`hasPerms`）
+- **动态全局配置**：运行时拉取 `public/platform-config.json` 并注入 `$config`（`src/config/index.ts`）
+
+---
+
+### 2. 启动/核心流程（速览）
+```mermaid
+flowchart TD
+  A[main.ts createApp] --> B[getPlatformConfig 拉取 platform-config.json]
+  B --> C[setupStore Pinia]
+  C --> D[app.use(router) + router.isReady]
+  D --> E[injectResponsiveStorage 注入响应式存储/配置]
+  E --> F[注册 ElementPlus/Table/Motion/指令/权限组件]
+  F --> G[mount #app]
+
+  D --> H[router.beforeEach]
+  H --> I[已登录? Cookies multiple-tabs + user-info]
+  I -->|是| J[roles 校验/动态路由 initRouter/标签页处理]
+  I -->|否| K[跳转 /login]
+```
+
+---
+
+### 3. 功能 → 文档 → 源码入口（优先查这里）
+
+#### 3.1 目录结构/总览
+- **文档**：`docs.local/01.指南/01.指南/03.目录结构.md`
+- **文档仓库（备用来源）**：`https://github.com/pure-admin/pure-admin-doc`（当本地 `docs.local/` 缺失时，从此仓库获取对应文档）
+- **源码入口**：`src/`（业务/框架层）、`build/`（Vite 构建增强）、`mock/`（本地假数据）
+
+#### 3.2 路由与菜单（静态 + 动态）
+- **文档**：`docs.local/01.指南/01.指南/07.路由和菜单.md`
+- **关键点（实现口径）**：
+  - 静态路由自动导入：`src/router/index.ts` 使用 `import.meta.glob("./modules/**/*.ts")`（排除 `remaining.ts`）
+  - 动态路由初始化：`src/router/utils.ts` → `initRouter()` → `getAsyncRoutes()` → `handleAsyncRoutes()`
+  - 菜单渲染：`permissionStore.wholeMenus`（静态 + 动态合并后再按权限过滤）
+  - **不要随意改/删**：`src/router/modules/home.ts`、`remaining.ts`、`error.ts`（文档也有提示）
+- **源码入口**：
+  - `src/router/index.ts`
+  - `src/router/utils.ts`
+  - `src/router/modules/*`
+  - 动态路由来源（薄版默认 mock）：`src/api/routes.ts` + `mock/asyncRoutes.ts`
+
+#### 3.3 HTTP 请求 / Mock / 联调
+- **文档**：`docs.local/01.指南/01.指南/08.http请求.md`
+- **源码入口**：
+  - HTTP 封装：`src/utils/http/index.ts`
+  - API 聚合：`src/api/*`
+  - Mock：`mock/*`（本地开发用）
+  - Vite 代理：`vite.config.ts`
+
+#### 3.3.1 后端接口 Swagger/OpenAPI（对接权威来源）
+- **Swagger/OpenAPI JSON（线上）**：https://apicenter.k8ssf.cychan.site/openapi.json
+- **本仓库对照（如需离线查看）**：`docs.local/openapi.json`
+- **鉴权要点**：
+  - 以 **Bearer JWT** 为主（OpenAPI 中定义 `bearerAuth`/`OAuth2PasswordBearer`）
+  - 登录端点可参考：`/auth/jwt/login`（`application/x-www-form-urlencoded`）
+- **对接约定**：
+  - 新增/调整接口字段时，优先以 OpenAPI 为准，再更新 `src/api/*` 的类型与调用
+  - 请求注入/刷新逻辑不要散落到业务层，统一经由 `src/utils/http/index.ts`
+
+#### 3.4 Token 存储 & 无感刷新
+- **文档**：`docs.local/01.指南/01.指南/08.http请求.md`（`JWT Token` 小节）
+- **源码入口**：
+  - token 存取：`src/utils/auth.ts`（`setToken/getToken/removeToken`）
+  - 刷新逻辑：`src/utils/http/index.ts`（请求拦截里过期判断 + 暂存请求队列）
+  - 刷新接口/动作：`src/store/modules/user.ts` → `handRefreshToken()` → `src/api/user.ts`
+- **实现约束**：
+  - 请求白名单（避免死循环）：`/login`、`/refresh-token`（见 `src/utils/http/index.ts`）
+
+#### 3.5 RBAC 权限（页面级 roles + 按钮级 auths/perms）
+- **文档**：`docs.local/01.指南/02.进阶/05.RBAC权限.md`
+- **源码入口**：
+  - 页面级（菜单过滤）：`src/router/utils.ts` → `filterNoPermissionTree()`（读取 `userKey` 里的 `roles`）
+  - 页面级（路由拦截 403）：`src/router/index.ts`（beforeEach 校验 `to.meta.roles`）
+  - 按钮级（路由 meta.auths）：`src/router/utils.ts` → `hasAuth()`
+  - 按钮级（登录 permissions）：`src/utils/auth.ts` → `hasPerms()`
+  - 组件封装：
+    - `src/components/ReAuth/src/auth.tsx`（`<Auth value="...">`）
+    - `src/components/RePerms/src/perms.tsx`（`<Perms value="...">`）
+  - 指令封装：
+    - `src/directives/auth/index.ts`（`v-auth`）
+    - `src/directives/perms/index.ts`（`v-perms`）
+  - 菜单/路由状态：`src/store/modules/permission.ts`
+
+#### 3.6 平台配置（platform-config.json）/运行时配置注入
+- **文档**：`docs.local/01.指南/01.指南/05.平台配置.md`
+- **源码入口**：
+  - 配置文件：`public/platform-config.json`
+  - 拉取注入：`src/config/index.ts`（`getPlatformConfig` 注入 `$config`、`getConfig` 读取）
+  - 启动注入：`src/main.ts`（`getPlatformConfig(app).then(...)`）
+  - 响应式存储：`src/utils/responsive.ts`
+
+#### 3.7 主题/暗黑模式
+- **文档**：`docs.local/01.指南/02.进阶/02.主题和暗黑模式.md`
+- **源码入口（本仓库）**：
+  - 主题变量：`src/style/theme.scss`
+  - 暗黑适配：`src/style/dark.scss`
+  - 主题切换 Hook：`src/layout/hooks/useDataThemeChange.ts`
+  - Element Plus 主题色联动：同上（`setEpThemeColor`）
+
+#### 3.8 布局（菜单模式/框架结构）
+- **文档**：`docs.local/01.指南/01.指南/06.布局.md`
+- **源码入口**：
+  - 框架：`src/layout/index.vue`、`src/layout/frame.vue`
+  - 布局组件：`src/layout/components/*`
+  - 布局状态：`src/store/modules/settings.ts`、`src/store/modules/app.ts`（如需）
+
+#### 3.9 打包与部署 / 构建插件
+- **文档**：`docs.local/01.指南/01.指南/09.打包和部署.md`
+- **源码入口**：
+  - Vite 配置：`vite.config.ts`
+  - 构建增强：`build/*.ts`
+  - 脚本：`package.json`（`build/report/preview` 等）
+
+---
+
+### 4. AI 常见改动任务：建议定位路径（只给入口，不写大段实现）
+- **新增页面（静态路由菜单）**：
+  - 新增路由：`src/router/modules/<xxx>.ts`
+  - 新增页面：`src/views/<xxx>/index.vue`（确保页面 `name` 与路由 `name` 一致）
+  - 如需权限：配置 `meta.roles` / `meta.auths`
+  - 参考文档：`docs.local/01.指南/01.指南/07.路由和菜单.md`
+
+- **新增 API**：
+  - 新增接口：`src/api/<domain>.ts`（优先写返回值类型）
+  - 请求封装能力：`src/utils/http/index.ts`
+  - 参考文档：`docs.local/01.指南/01.指南/08.http请求.md`
+
+- **按钮级权限控制**：
+  - 路由 `meta.auths` + `hasAuth/<Auth>`：看 `src/router/utils.ts` + `src/components/ReAuth/*`
+  - 登录 `permissions` + `hasPerms/<Perms>`：看 `src/utils/auth.ts` + `src/components/RePerms/*`
+  - 参考文档：`docs.local/01.指南/02.进阶/05.RBAC权限.md`
+
+---
+
+### 5. 危险区（改动前先确认）
+- **路由核心**：`src/router/index.ts`、`src/router/utils.ts`（动态路由/菜单/标签页/keepAlive 串联）
+- **鉴权与 token**：`src/utils/auth.ts`、`src/utils/http/index.ts`、`src/store/modules/user.ts`
+- **平台全局配置注入**：`src/config/index.ts`、`public/platform-config.json`
+
+
