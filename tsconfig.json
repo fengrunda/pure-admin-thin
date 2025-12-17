@@ -46,7 +46,7 @@
     "src/**/*.vue",
     "types/*.d.ts",
     "vite.config.ts"
-  ],
+, "build/devtools.ts"  ],
   "exclude": [
     "dist",
     "**/*.js",
