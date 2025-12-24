@@ -171,31 +171,32 @@ router.beforeEach((to: ToRouteType, _from, next) => {
         to.path !== "/login"
       ) {
         initRouter().then((router: Router) => {
+          const { path } = to;
+          const route = findRouteByPath(
+            path,
+            router.options.routes[0].children
+          );
+          // 不管是否开启标签页缓存，都需要添加顶级菜单
           if (!useMultiTagsStoreHook().getMultiTagsCache) {
-            const { path } = to;
-            const route = findRouteByPath(
-              path,
-              router.options.routes[0].children
-            );
             getTopMenu(true);
-            // query、params模式路由传参数的标签页不在此处处理
-            if (route && route.meta?.title) {
-              if (isAllEmpty(route.parentId) && route.meta?.backstage) {
-                // 此处为动态顶级路由（目录）
-                const { path, name, meta } = route.children[0];
-                useMultiTagsStoreHook().handleTags("push", {
-                  path,
-                  name,
-                  meta
-                });
-              } else {
-                const { path, name, meta } = route;
-                useMultiTagsStoreHook().handleTags("push", {
-                  path,
-                  name,
-                  meta
-                });
-              }
+          }
+          // query、params模式路由传参数的标签页不在此处处理
+          if (route && route.meta?.title) {
+            if (isAllEmpty(route.parentId) && route.meta?.backstage) {
+              // 此处为动态顶级路由（目录）
+              const { path, name, meta } = route.children[0];
+              useMultiTagsStoreHook().handleTags("push", {
+                path,
+                name,
+                meta
+              });
+            } else {
+              const { path, name, meta } = route;
+              useMultiTagsStoreHook().handleTags("push", {
+                path,
+                name,
+                meta
+              });
             }
           }
           // 确保动态路由完全加入路由列表并且不影响静态路由（注意：动态路由刷新时router.beforeEach可能会触发两次，第一次触发动态路由还未完全添加，第二次动态路由才完全添加到路由列表，如果需要在router.beforeEach做一些判断可以在to.name存在的条件下去判断，这样就只会触发一次）

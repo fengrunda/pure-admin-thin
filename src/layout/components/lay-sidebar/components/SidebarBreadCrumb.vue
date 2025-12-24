@@ -51,7 +51,11 @@ const getBreadcrumb = (): void => {
     if (currentRoute?.query || currentRoute?.params) return;
     if (item?.children) {
       item.children.forEach(v => {
-        if (v?.meta?.title === item?.meta?.title) {
+        // 只有当前页面就是这个同名子页面时，才移除父级（避免误删其他分支的父级）
+        if (
+          v?.meta?.title === item?.meta?.title &&
+          v?.name === currentRoute?.name
+        ) {
           matched.splice(index, 1);
         }
       });

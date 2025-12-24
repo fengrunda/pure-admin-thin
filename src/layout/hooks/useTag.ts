@@ -117,14 +117,18 @@ export function useTags() {
     const itemName = item.name || "";
 
     if (isBoolean(route?.meta?.showLink) && route?.meta?.showLink === false) {
+      // showLink: false 的路由，需要同时比较 name 和 query/params
       if (Object.keys(route.query).length > 0) {
         return currentName === itemName && isEqual(route.query, item.query)
           ? previous
           : next;
-      } else {
+      } else if (Object.keys(route.params).length > 0) {
         return currentName === itemName && isEqual(route.params, item.params)
           ? previous
           : next;
+      } else {
+        // 没有 query 和 params 时，只比较 name
+        return currentName === itemName ? previous : next;
       }
     } else {
       return currentName === itemName ? previous : next;
