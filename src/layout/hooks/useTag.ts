@@ -123,7 +123,24 @@ export function useTags() {
           ? previous
           : next;
       } else if (Object.keys(route.params).length > 0) {
-        return currentName === itemName && isEqual(route.params, item.params)
+        const normalizeParams = (params?: Record<string, any>) => {
+          const source = params ?? {};
+          const normalized: Record<string, any> = {};
+          Object.keys(source).forEach(key => {
+            const value = source[key];
+            normalized[key] = Array.isArray(value)
+              ? value.map(v => (v == null ? v : String(v)))
+              : value == null
+                ? value
+                : String(value);
+          });
+          return normalized;
+        };
+        return currentName === itemName &&
+          isEqual(
+            normalizeParams(route.params as any),
+            normalizeParams(item.params)
+          )
           ? previous
           : next;
       } else {

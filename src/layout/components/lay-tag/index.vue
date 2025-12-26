@@ -72,7 +72,23 @@ const dynamicTagView = async () => {
     if (!isAllEmpty(route.query)) {
       return isEqual(route.query, item.query);
     } else if (!isAllEmpty(route.params)) {
-      return isEqual(route.params, item.params);
+      const normalizeParams = (params?: Record<string, any>) => {
+        const source = params ?? {};
+        const normalized: Record<string, any> = {};
+        Object.keys(source).forEach(key => {
+          const value = source[key];
+          normalized[key] = Array.isArray(value)
+            ? value.map(v => (v == null ? v : String(v)))
+            : value == null
+              ? value
+              : String(value);
+        });
+        return normalized;
+      };
+      return isEqual(
+        normalizeParams(route.params as any),
+        normalizeParams(item.params)
+      );
     } else {
       return route.path === item.path;
     }

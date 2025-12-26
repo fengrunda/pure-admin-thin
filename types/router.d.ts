@@ -58,6 +58,25 @@ declare global {
     activePath?: string;
     /** 当前页面是否已经加载过 */
     loaded?: boolean;
+
+    /**
+     * @description 面包屑：按需插入“动态参数对应的名称”节点（可选）
+     * 典型场景：/xxx/:id/detail 需要展示为：xxx / <名称> / detail
+     */
+    breadcrumbParam?: {
+      /** 从 params/query 里取的参数 key（优先 params，其次 query） */
+      paramKey: string;
+      /** 标题取值 key 列表（依次从 query/params 取，取到即止） */
+      titleKeys?: string[];
+      /** 取不到 titleKeys 时的兜底标题模板，支持 `{id}` */
+      fallback?: string;
+      /** 插入位置：插入到面包屑数组的索引位置（默认 1，即插在第 0 和第 1 个之间） */
+      insertAfterIndex?: number;
+      /** 是否禁用点击（默认 true） */
+      disabled?: boolean;
+      /** 生成 key 的前缀（默认 "__breadcrumbParam__"） */
+      keyPrefix?: string;
+    };
   }
 
   /**
@@ -74,6 +93,10 @@ declare global {
     component?: RouteComponent;
     meta?: CustomizeRouteMeta;
     /** 子路由配置项 */
+    props?:
+      | boolean
+      | Record<string, any>
+      | ((route: RouteLocationNormalized) => Record<string, any>);
     children?: Array<RouteChildrenConfigsTable>;
   }
 
