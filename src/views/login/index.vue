@@ -37,8 +37,8 @@ dataThemeChange(overallStyle.value);
 const { title } = useNav();
 
 const ruleForm = reactive({
-  username: "admin",
-  password: "admin123"
+  username: "admin_new@example.com",
+  password: "Admin123!"
 });
 
 const onLogin = async (formEl: FormInstance | undefined) => {
@@ -112,12 +112,8 @@ useEventListener(document, "keydown", ({ code }) => {
             <h2 class="outline-hidden">{{ title }}</h2>
           </Motion>
 
-          <el-form
-            ref="ruleFormRef"
-            :model="ruleForm"
-            :rules="loginRules"
-            size="large"
-          >
+          <el-form ref="ruleFormRef" :model="ruleForm" size="large">
+            <!-- 密码校验规则暂时注释掉 -->
             <Motion :delay="100">
               <el-form-item
                 prop="username"

@@ -25,9 +25,12 @@ export interface PureHttpResponse extends AxiosResponse {
 export interface PureHttpRequestConfig extends AxiosRequestConfig {
   beforeRequestCallback?: (request: PureHttpRequestConfig) => void;
   beforeResponseCallback?: (response: PureHttpResponse) => void;
+  skipAuth?: boolean;
+  skipAuthUrls?: string[];
 }
 
 export default class PureHttp {
+  setConfig(config: PureHttpRequestConfig): void;
   request<T>(
     method: RequestMethods,
     url: string,

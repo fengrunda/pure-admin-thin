@@ -7,14 +7,15 @@ import {
   routerArrays,
   storageLocal
 } from "../utils";
-import {
-  type UserResult,
-  type RefreshTokenResult,
-  getLogin,
-  refreshTokenApi
-} from "@/api/user";
+import { type JwtLoginResponse, getLogin, getUserInfo } from "@/api/user";
 import { useMultiTagsStoreHook } from "./multiTags";
-import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
+import {
+  type DataInfo,
+  setToken,
+  removeToken,
+  userKey,
+  getTokenExpiryFromJwt
+} from "@/utils/auth";
 
 export const useUserStore = defineStore("pure-user", {
   state: (): userType => ({
@@ -65,16 +66,38 @@ export const useUserStore = defineStore("pure-user", {
     },
     /** 登入 */
     async loginByUsername(data) {
-      return new Promise<UserResult>((resolve, reject) => {
-        getLogin(data)
-          .then(data => {
-            if (data?.success) setToken(data.data);
-            resolve(data);
-          })
-          .catch(error => {
-            reject(error);
-          });
-      });
+      try {
+        const res: JwtLoginResponse = await getLogin(data);
+        const token = res?.access_token ?? "";
+        if (!token) {
+          return Promise.reject(new Error("登录失败"));
+        }
+        const user = await getUserInfo(token);
+        const username = user?.username ?? data?.username ?? "";
+        const nickname =
+          [user?.first_name, user?.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          user?.username ||
+          username;
+        const mappedData: DataInfo<Date> = {
+          accessToken: token,
+          refreshToken: token,
+          expires: token
+            ? getTokenExpiryFromJwt(token)
+            : new Date(Date.now() + 60 * 60 * 1000),
+          avatar: "",
+          username,
+          nickname,
+          roles: user?.role ? [user.role] : [],
+          permissions: []
+        };
+        setToken(mappedData);
+        return { success: true, data: mappedData };
+      } catch (error) {
+        return Promise.reject(error);
+      }
     },
     /** 前端登出（不调用接口） */
     logOut() {
@@ -85,21 +108,6 @@ export const useUserStore = defineStore("pure-user", {
       useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
       resetRouter();
       router.push("/login");
-    },
-    /** 刷新`token` */
-    async handRefreshToken(data) {
-      return new Promise<RefreshTokenResult>((resolve, reject) => {
-        refreshTokenApi(data)
-          .then(data => {
-            if (data) {
-              setToken(data.data);
-              resolve(data);
-            }
-          })
-          .catch(error => {
-            reject(error);
-          });
-      });
     }
   }
 });

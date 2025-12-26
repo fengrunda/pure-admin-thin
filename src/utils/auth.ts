@@ -139,3 +139,36 @@ export const hasPerms = (value: string | Array<string>): boolean => {
     : isIncludeAllChildren(value, permissions);
   return isAuths ? true : false;
 };
+
+const DEFAULT_TOKEN_TTL = 60 * 60 * 1000;
+
+const normalizeBase64 = (value: string): string => {
+  let normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const mod = normalized.length % 4;
+  if (mod === 2) normalized += "==";
+  if (mod === 3) normalized += "=";
+  return normalized;
+};
+
+const parseJwtPayload = <T = Record<string, unknown>>(
+  token: string
+): T | null => {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  const payload = parts[1];
+  try {
+    const decoded = atob(normalizeBase64(payload));
+    return JSON.parse(decoded) as T;
+  } catch {
+    return null;
+  }
+};
+
+export const getTokenExpiryFromJwt = (token: string): Date => {
+  const payload = parseJwtPayload<{ exp?: number }>(token);
+  if (payload && typeof payload.exp === "number") {
+    return new Date(payload.exp * 1000);
+  }
+  return new Date(Date.now() + DEFAULT_TOKEN_TTL);
+};

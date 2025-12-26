@@ -1,45 +1,86 @@
 import { http } from "@/utils/http";
+import { formatToken } from "@/utils/auth";
 
-export type UserResult = {
-  success: boolean;
-  data: {
-    /** 头像 */
-    avatar: string;
-    /** 用户名 */
-    username: string;
-    /** 昵称 */
-    nickname: string;
-    /** 当前登录用户的角色 */
-    roles: Array<string>;
-    /** 按钮级别权限 */
-    permissions: Array<string>;
-    /** `token` */
-    accessToken: string;
-    /** 用于调用刷新`accessToken`的接口时所需的`token` */
-    refreshToken: string;
-    /** `accessToken`的过期时间（格式'xxxx/xx/xx xx:xx:xx'） */
-    expires: Date;
-  };
+export type RemoteLoginUser = {
+  id?: string;
+  email?: string;
+  username?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  role?: string;
+  tenant_id?: number | null;
+  status?: number;
+  is_active?: boolean;
+  is_superuser?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
-export type RefreshTokenResult = {
-  success: boolean;
-  data: {
-    /** `token` */
-    accessToken: string;
-    /** 用于调用刷新`accessToken`的接口时所需的`token` */
-    refreshToken: string;
-    /** `accessToken`的过期时间（格式'xxxx/xx/xx xx:xx:xx'） */
-    expires: Date;
-  };
+export type RemoteLoginResponse = {
+  status: string;
+  message: string;
+  user?: RemoteLoginUser | null;
+  token?: string | null;
+  is_new_user?: boolean;
+};
+
+export type JwtLoginResponse = {
+  access_token?: string;
+  token_type?: string;
+};
+
+export type RemoteLoginRequest = {
+  username: string;
+  password: string;
+};
+
+/** jyh登录 */
+/** jyh登录 */
+export const getJYHLogin = (data?: RemoteLoginRequest) => {
+  const params = new URLSearchParams();
+  if (data?.username) params.append("username", data.username);
+  if (data?.password) params.append("password", data.password);
+  return http.request<RemoteLoginResponse>(
+    "post",
+    "/jol-api/api/jyh/remote-login",
+    { data: params },
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      skipAuth: true
+    }
+  );
 };
 
 /** 登录 */
-export const getLogin = (data?: object) => {
-  return http.request<UserResult>("post", "/login", { data });
+export const getLogin = (data?: RemoteLoginRequest) => {
+  const params = new URLSearchParams();
+  if (data?.username) params.append("username", data.username);
+  if (data?.password) params.append("password", data.password);
+  return http.request<JwtLoginResponse>(
+    "post",
+    "/jol-api/auth/jwt/login",
+    { data: params },
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      skipAuth: true
+    }
+  );
 };
 
-/** 刷新`token` */
-export const refreshTokenApi = (data?: object) => {
-  return http.request<RefreshTokenResult>("post", "/refresh-token", { data });
+/** 获取用户信息 */
+export const getUserInfo = (token?: string) => {
+  return http.request<RemoteLoginUser>(
+    "get",
+    "/jol-api/users/me",
+    {},
+    {
+      headers: token ? { Authorization: formatToken(token) } : undefined
+    }
+  );
 };
