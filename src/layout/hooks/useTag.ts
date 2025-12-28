@@ -13,7 +13,6 @@ import { responsiveStorageNameSpace } from "@/config";
 import { useSettingStoreHook } from "@/store/modules/settings";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import {
-  isEqual,
   isBoolean,
   storageLocal,
   toggleClass,
@@ -59,6 +58,49 @@ export function useTags() {
   const multiTags: any = computed(() => {
     return useMultiTagsStoreHook().multiTags;
   });
+
+  const normalizeParams = (params?: Record<string, any>) => {
+    const source = params ?? {};
+    const normalized: Record<string, any> = {};
+    Object.keys(source).forEach(key => {
+      const value = source[key];
+      normalized[key] = Array.isArray(value)
+        ? value.map(v => (v == null ? v : String(v)))
+        : value == null
+          ? value
+          : String(value);
+    });
+    return normalized;
+  };
+
+  const stableStringify = (input: any): string => {
+    if (input == null) return "";
+    if (typeof input !== "object") return String(input);
+    if (Array.isArray(input)) {
+      return `[${input.map(stableStringify).join(",")}]`;
+    }
+    const keys = Object.keys(input).sort();
+    return `{${keys
+      .map(k => `${k}:${stableStringify((input as any)[k])}`)
+      .join(",")}}`;
+  };
+
+  const getTagKey = (raw: any) => {
+    const name = raw?.name ? String(raw.name) : "";
+    const path = raw?.path ? String(raw.path) : "";
+    const q = stableStringify(raw?.query);
+    const p = stableStringify(normalizeParams(raw?.params));
+    return `${name}|${path}|q:${q}|p:${p}`;
+  };
+
+  const currentTagKey = computed(() =>
+    getTagKey({
+      name: route.name,
+      path: route.path,
+      query: route.query,
+      params: route.params
+    })
+  );
 
   const tagsViews = reactive<Array<tagsViewsType>>([
     {
@@ -113,43 +155,9 @@ export function useTags() {
   ]);
 
   function conditionHandle(item, previous, next) {
-    const currentName = route.name || "";
-    const itemName = item.name || "";
-
-    if (isBoolean(route?.meta?.showLink) && route?.meta?.showLink === false) {
-      // showLink: false 的路由，需要同时比较 name 和 query/params
-      if (Object.keys(route.query).length > 0) {
-        return currentName === itemName && isEqual(route.query, item.query)
-          ? previous
-          : next;
-      } else if (Object.keys(route.params).length > 0) {
-        const normalizeParams = (params?: Record<string, any>) => {
-          const source = params ?? {};
-          const normalized: Record<string, any> = {};
-          Object.keys(source).forEach(key => {
-            const value = source[key];
-            normalized[key] = Array.isArray(value)
-              ? value.map(v => (v == null ? v : String(v)))
-              : value == null
-                ? value
-                : String(value);
-          });
-          return normalized;
-        };
-        return currentName === itemName &&
-          isEqual(
-            normalizeParams(route.params as any),
-            normalizeParams(item.params)
-          )
-          ? previous
-          : next;
-      } else {
-        // 没有 query 和 params 时，只比较 name
-        return currentName === itemName ? previous : next;
-      }
-    } else {
-      return currentName === itemName ? previous : next;
-    }
+    const currentKey = currentTagKey.value;
+    const itemKey = getTagKey(item);
+    return currentKey === itemKey ? previous : next;
   }
 
   const isFixedTag = computed(() => {

@@ -6,6 +6,9 @@ import { responsiveStorageNameSpace } from "@/config";
 
 export const injectResponsiveStorage = (app: App, config: PlatformConfigs) => {
   const nameSpace = responsiveStorageNameSpace();
+  const storedConfigure = Storage.getData("configure", nameSpace) as any;
+  const storedTags = Storage.getData("tags", nameSpace) as any;
+  const forceMultiTagsCache = config.MultiTagsCache ?? false;
   const configObj = Object.assign(
     {
       // layout模式以及主题
@@ -19,21 +22,27 @@ export const injectResponsiveStorage = (app: App, config: PlatformConfigs) => {
         overallStyle: config.OverallStyle ?? "light" // 整体风格（浅色：light、深色：dark、自动：system）
       },
       // 系统配置-界面显示
-      configure: Storage.getData("configure", nameSpace) ?? {
-        grey: config.Grey ?? false,
-        weak: config.Weak ?? false,
-        hideTabs: config.HideTabs ?? false,
-        hideFooter: config.HideFooter ?? true,
-        showLogo: config.ShowLogo ?? true,
-        showModel: config.ShowModel ?? "smart",
-        multiTagsCache: config.MultiTagsCache ?? false,
-        stretch: config.Stretch ?? false
-      }
+      configure: Object.assign(
+        {
+          grey: config.Grey ?? false,
+          weak: config.Weak ?? false,
+          hideTabs: config.HideTabs ?? false,
+          hideFooter: config.HideFooter ?? true,
+          showLogo: config.ShowLogo ?? true,
+          showModel: config.ShowModel ?? "smart",
+          stretch: config.Stretch ?? false
+        },
+        storedConfigure ?? {},
+        {
+          // 以平台配置为准：保证“刷新保留 tabs”的行为稳定
+          multiTagsCache: forceMultiTagsCache
+        }
+      )
     },
-    config.MultiTagsCache
+    forceMultiTagsCache
       ? {
           // 默认显示顶级菜单tag
-          tags: Storage.getData("tags", nameSpace) ?? routerArrays
+          tags: storedTags ?? routerArrays
         }
       : {}
   );

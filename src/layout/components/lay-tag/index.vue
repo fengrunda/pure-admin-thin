@@ -66,32 +66,62 @@ const fixedTags = [
   ...usePermissionStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
 ];
 
+const stableStringify = (input: any): string => {
+  if (input == null) return "";
+  if (typeof input !== "object") return String(input);
+  if (Array.isArray(input)) return `[${input.map(stableStringify).join(",")}]`;
+  const keys = Object.keys(input).sort();
+  return `{${keys
+    .map(k => `${k}:${stableStringify((input as any)[k])}`)
+    .join(",")}}`;
+};
+
+const getTagKey = (tag: any): string => {
+  const name = tag?.name ? String(tag.name) : "";
+  const path = tag?.path ? String(tag.path) : "";
+  const q = stableStringify(tag?.query);
+  const p = stableStringify(tag?.params);
+  return `${name}|${path}|q:${q}|p:${p}`;
+};
+
+const normalizeParams = (params?: Record<string, any>) => {
+  const source = params ?? {};
+  const normalized: Record<string, any> = {};
+  Object.keys(source).forEach(key => {
+    const value = source[key];
+    normalized[key] = Array.isArray(value)
+      ? value.map(v => (v == null ? v : String(v)))
+      : value == null
+        ? value
+        : String(value);
+  });
+  return normalized;
+};
+
+const isSameTag = (a: any, b: any): boolean => {
+  if (!a || !b) return false;
+  if (a.name && b.name && a.name !== b.name) return false;
+  if (!isAllEmpty(a?.query) || !isAllEmpty(b?.query)) {
+    return isEqual(a?.query ?? {}, b?.query ?? {});
+  }
+  if (!isAllEmpty(a?.params) || !isAllEmpty(b?.params)) {
+    return isEqual(normalizeParams(a?.params), normalizeParams(b?.params));
+  }
+  return a.path === b.path;
+};
+
 const dynamicTagView = async () => {
   await nextTick();
   const index = multiTags.value.findIndex(item => {
-    if (!isAllEmpty(route.query)) {
-      return isEqual(route.query, item.query);
-    } else if (!isAllEmpty(route.params)) {
-      const normalizeParams = (params?: Record<string, any>) => {
-        const source = params ?? {};
-        const normalized: Record<string, any> = {};
-        Object.keys(source).forEach(key => {
-          const value = source[key];
-          normalized[key] = Array.isArray(value)
-            ? value.map(v => (v == null ? v : String(v)))
-            : value == null
-              ? value
-              : String(value);
-        });
-        return normalized;
-      };
-      return isEqual(
-        normalizeParams(route.params as any),
-        normalizeParams(item.params)
-      );
-    } else {
-      return route.path === item.path;
-    }
+    return isSameTag(
+      {
+        name: route.name,
+        path: route.path,
+        query: route.query,
+        params: route.params
+      },
+      item
+    );
   });
   moveToView(index);
 };
@@ -232,19 +262,9 @@ function onFresh() {
 }
 
 function deleteDynamicTag(obj: any, current: any, tag?: string) {
-  const valueIndex: number = multiTags.value.findIndex((item: any) => {
-    if (item.query) {
-      if (item.path === obj.path) {
-        return item.query === obj.query;
-      }
-    } else if (item.params) {
-      if (item.path === obj.path) {
-        return item.params === obj.params;
-      }
-    } else {
-      return item.path === obj.path;
-    }
-  });
+  const valueIndex: number = multiTags.value.findIndex((item: any) =>
+    isSameTag(item, obj)
+  );
 
   const spliceRoute = (
     startIndex?: number,
@@ -303,8 +323,18 @@ function deleteDynamicTag(obj: any, current: any, tag?: string) {
 }
 
 function deleteMenu(item, tag?: string) {
+  const deletedName = item?.name;
+  const deletedKeepAlive = !!item?.meta?.keepAlive;
   deleteDynamicTag(item, item.path, tag);
-  handleAliveRoute(route as ToRouteType);
+  // 多个 tabs 可能复用同一个 route.name（不同 query/params），仅在“最后一个同名 tab”关闭时才清理缓存
+  if (deletedKeepAlive && deletedName) {
+    const hasSameName = multiTags.value.some(
+      (t: any) => t?.name === deletedName
+    );
+    if (!hasSameName) {
+      handleAliveRoute({ name: deletedName } as any, "delete");
+    }
+  }
 }
 
 function onClickDrop(key, item, selectRoute?: RouteConfigs) {
@@ -515,19 +545,28 @@ function openMenu(tag, e) {
 function tagOnClick(item) {
   const { name, path } = item;
   if (name) {
-    if (item.query) {
+    const hasQuery = item.query && !isAllEmpty(item.query);
+    const hasParams = item.params && !isAllEmpty(item.params);
+    // 动态路由（必填 params）优先走 params；若同时有 query 一并带上
+    if (hasParams) {
       router.push({
         name,
-        query: item.query
+        params: item.params,
+        ...(hasQuery ? { query: item.query } : {})
       });
-    } else if (item.params) {
-      router.push({
-        name,
-        params: item.params
-      });
-    } else {
-      router.push({ name });
+      return;
     }
+    // 仅有 query 时，优先用 path + query，避免按 name 跳转缺参报错
+    if (hasQuery && path) {
+      router.push({ path, query: item.query });
+      return;
+    }
+    if (path) {
+      // 当未携带 params/query 时优先用完整 path，避免动态路由缺参报错
+      router.push({ path });
+      return;
+    }
+    router.push({ name });
   } else {
     router.push({ path });
   }
@@ -594,7 +633,7 @@ onBeforeUnmount(() => {
       <div ref="tabDom" class="tab select-none" :style="getTabStyle">
         <div
           v-for="(item, index) in multiTags"
-          :key="index"
+          :key="getTagKey(item)"
           :ref="'dynamic' + index"
           :class="[
             'scroll-item is-closable',

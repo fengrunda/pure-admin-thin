@@ -6,13 +6,26 @@ import {
   isUrl,
   isEqual,
   isNumber,
-  isBoolean,
   getConfig,
   routerArrays,
   storageLocal,
   responsiveStorageNameSpace
 } from "../utils";
 import { usePermissionStoreHook } from "./permission";
+
+const normalizeRouteParams = (params?: Record<string, any>) => {
+  const source = params ?? {};
+  const normalized: Record<string, any> = {};
+  Object.keys(source).forEach(key => {
+    const value = source[key];
+    normalized[key] = Array.isArray(value)
+      ? value.map(v => (v == null ? v : String(v)))
+      : value == null
+        ? value
+        : String(value);
+  });
+  return normalized;
+};
 
 export const useMultiTagsStore = defineStore("pure-multiTags", {
   state: () => ({
@@ -76,16 +89,18 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
             if (isUrl(tagVal?.name)) return;
             // 如果title为空拒绝添加空信息到标签页
             if (tagVal?.meta?.title.length === 0) return;
-            // showLink:false 不添加到标签页
-            if (isBoolean(tagVal?.meta?.showLink) && !tagVal?.meta?.showLink)
-              return;
             const tagPath = tagVal.path;
             const tagHasExits = this.multiTags.some(tag => {
-              return (
-                tag.path === tagPath &&
-                isEqual(tag?.query, tagVal?.query) &&
-                isEqual(tag?.params, tagVal?.params)
+              const samePath = tag.path === tagPath;
+              const sameQuery = isEqual(
+                normalizeRouteParams(tag?.query),
+                normalizeRouteParams(tagVal?.query)
               );
+              const sameParams = isEqual(
+                normalizeRouteParams(tag?.params),
+                normalizeRouteParams(tagVal?.params)
+              );
+              return samePath && sameQuery && sameParams;
             });
 
             if (tagHasExits) return;
