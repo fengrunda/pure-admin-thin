@@ -29,6 +29,7 @@ export type RemoteLoginResponse = {
 export type JwtLoginResponse = {
   access_token?: string;
   token_type?: string;
+  expires?: number;
 };
 
 export type RemoteLoginRequest = {
@@ -44,7 +45,7 @@ export const getJYHLogin = (data?: RemoteLoginRequest) => {
   if (data?.password) params.append("password", data.password);
   return http.request<RemoteLoginResponse>(
     "post",
-    "/jol-api/api/jyh/remote-login",
+    "/api/jyh/remote-login",
     { data: params },
     {
       headers: {
@@ -62,7 +63,7 @@ export const getLogin = (data?: RemoteLoginRequest) => {
   if (data?.password) params.append("password", data.password);
   return http.request<JwtLoginResponse>(
     "post",
-    "/jol-api/auth/jwt/login",
+    "/auth/jwt/login",
     { data: params },
     {
       headers: {
@@ -77,7 +78,7 @@ export const getLogin = (data?: RemoteLoginRequest) => {
 export const getUserInfo = (token?: string) => {
   return http.request<RemoteLoginUser>(
     "get",
-    "/jol-api/users/me",
+    "/users/me",
     {},
     {
       headers: token ? { Authorization: formatToken(token) } : undefined

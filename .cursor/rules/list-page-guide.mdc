@@ -1,0 +1,32 @@
+---
+description: 列表页实现指引
+alwaysApply: false
+---
+# 列表页实现规则
+
+### 目标
+- 为后续业务页面复用 `physical-task` 的组合形式，提炼 `PureTableBar + DynamicFormV2 + DynamicTable` 的稳定接入套路。
+- 强调 UI 控件职责分离：`PureTableBar` 负责列显性、密度、刷新/导出等头部操作，`DynamicFormV2` 负责筛选，`DynamicTable` 只渲染传入列。
+
+### 标准结构
+1. **逻辑层**  
+   - 在 `<script setup>` 先定义 `filterFormItems`（筛选项）与 `tableColumns`（列定义），所有列应包含 `slotContent`、`formatter`、`fixed` 等关键属性以便复用。  
+   - 提供 `buildTableColumnMap(dynamicColumns)` 辅助函数，用于把 `PureTableBar` 的 `dynamicColumns` 转换成 `Map`，并显式处理 `visible`/`hide`，避免 Element Plus 渲染时漏列。  
+   - 复用 `useListQuery` 保持分页/过滤/加载状态，所有查询按钮都按顺序执行 `setListParams(collectFilters())` → `setListPage(1)` → `await loadData()`，确保数据与分页一致。
+2. **模板层**  
+   - 头部包装：`<PureTableBar :columns="tableColumns" tableKey="xxx" @refresh="loadData">`，`tableKey` 区分列缓存。  
+   - Slot 结构：在默认 slot 解构 `{ size, dynamicColumns }`；把 `size` 透传给 `<DynamicTable :size="size" />`，把 `buildTableColumnMap(dynamicColumns)` 作为 `:tableColumnMap`。  
+   - 按钮插槽仅放新增/导出等全局操作，操作按钮交给 `tableScopedSlots` render 以便使用 `handleEdit`/`handleDelete`。  
+3. **副作用控制**  
+   - 所有与数据相关的副作用（接口/弹窗/删除确认）集中在 `handle*` 系列函数中，保持 `PureTableBar` 纯粹负责 UI 控件。  
+   - 通过 `watch` 观察 `route.params`/`currentCommunityId` 等动态参数，在变化时重新拉取数据，保持状态同步。
+
+### 约定
+- `buildTableColumnMap` 需要判断 `column.hide`，并设置 `visible`，否则 `DynamicTableColumn` 会默认渲染。  
+- `PureTableBar` 内部列勾选/拖拽只影响 `dynamicColumns`，最终列映射须通过 `Map` 输送给 `DynamicTable`；避免把 `tableColumns` 的引用直接传入。  
+- 不要在 `PureTableBar` 内触发副作用（例如 `handleCreate`/`handleEdit`），这些操作应在业务页处理。  
+- 分页、过滤等状态固定在 `useListQuery`，只需调用 `setListPage`/`setListResult`，避免 copy 多版逻辑。  
+
+### 参考
+- 栗子：`src/views/physical-task/index.vue`
+

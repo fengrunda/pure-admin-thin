@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: "PhysicalTaskFunctionConfigConfigPage" });
+defineOptions({ name: "CommunityConfigPhysicalTaskFunctionConfigConfigPage" });
 </script>
 
 <style scoped lang="scss">
@@ -22,8 +22,7 @@ defineOptions({ name: "PhysicalTaskFunctionConfigConfigPage" });
 
 .physical-task-function-config-page__empty {
   margin-top: 32px;
-  text-align: center;
   color: var(--el-color-text-regular);
+  text-align: center;
 }
 </style>
-

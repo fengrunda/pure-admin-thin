@@ -237,4 +237,19 @@ router.afterEach(to => {
   NProgress.done();
 });
 
+// 普通跳转也需要将当前路由加入 tabs（支持 params/query 的同页面多开）
+router.afterEach(to => {
+  const externalLink = isUrl(to?.name as string);
+  if (externalLink) return;
+  if (to.path === "/login") return;
+  if (!to?.meta?.title) return;
+  useMultiTagsStoreHook().handleTags("push", {
+    path: to.path,
+    name: to.name as any,
+    meta: to.meta as any,
+    params: to.params as any,
+    query: to.query as any
+  });
+});
+
 export default router;

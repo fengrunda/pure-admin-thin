@@ -69,6 +69,12 @@ export const useUserStore = defineStore("pure-user", {
       try {
         const res: JwtLoginResponse = await getLogin(data);
         const token = res?.access_token ?? "";
+        const expires =
+          res?.expires && Number.isFinite(res.expires)
+            ? new Date(res.expires)
+            : token
+              ? getTokenExpiryFromJwt(token)
+              : new Date(Date.now() + 60 * 60 * 1000);
         if (!token) {
           return Promise.reject(new Error("登录失败"));
         }
@@ -83,10 +89,7 @@ export const useUserStore = defineStore("pure-user", {
           username;
         const mappedData: DataInfo<Date> = {
           accessToken: token,
-          refreshToken: token,
-          expires: token
-            ? getTokenExpiryFromJwt(token)
-            : new Date(Date.now() + 60 * 60 * 1000),
+          expires,
           avatar: "",
           username,
           nickname,

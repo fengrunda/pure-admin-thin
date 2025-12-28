@@ -12,7 +12,7 @@
 
 ## 重要约束（必读）
 
-- **只支持 Map**  
+- **只支持 Map**
   - `DynamicFormV2.formItems`：`Map<string, DynamicFormItem>`
   - `DynamicTable.tableColumnMap`：`Map<any, ColumnConfig>`
   - `FormTableField.tableColumnMap/formItemMap/tableSlotMap`：均为 `Map`
@@ -33,14 +33,14 @@
 
 ## 最小用法：DynamicTable
 
-1) 生成列配置（**Map**）
+1. 生成列配置（**Map**）
 
 ```ts
 const tableColumnMap = new Map();
 tableColumnMap.set("name", INIT_COLUMN({ prop: "name", label: "名称" }));
 ```
 
-2) 使用组件（模板示意）
+2. 使用组件（模板示意）
 
 ```ts
 // <DynamicTable :tableColumnMap="tableColumnMap" :data="list" />
@@ -48,14 +48,17 @@ tableColumnMap.set("name", INIT_COLUMN({ prop: "name", label: "名称" }));
 
 ## 最小用法：DynamicFormV2
 
-1) 生成表单项（**Map**）
+1. 生成表单项（**Map**）
 
 ```ts
 const formItems = new Map();
-formItems.set("name", INIT_ITEM({ prop: "name", attrsFormItem: { label: "名称" } }));
+formItems.set(
+  "name",
+  INIT_ITEM({ prop: "name", attrsFormItem: { label: "名称" } })
+);
 ```
 
-2) 使用组件（模板示意）
+2. 使用组件（模板示意）
 
 ```ts
 // <DynamicFormV2 :formItems="formItems" />
@@ -63,14 +66,14 @@ formItems.set("name", INIT_ITEM({ prop: "name", attrsFormItem: { label: "名称"
 
 ## 最小用法：FormTableField（多行表单）
 
-1) 准备 3 份 Map（列/单元格表单项/表格 slot）
+1. 准备 3 份 Map（列/单元格表单项/表格 slot）
 
 ```ts
 const tableColumnMap = new Map();
 const formItemMap = new Map();
 ```
 
-2) 使用组件（模板示意）
+2. 使用组件（模板示意）
 
 ```ts
 // <FormTableField v-model="rows" :tableColumnMap="tableColumnMap" :formItemMap="formItemMap" />
@@ -83,12 +86,22 @@ const formItemMap = new Map();
 
 > 如果你希望全站只用一种权限模式（比如只用 `permissions`），可以只改 `permission.ts` 的策略，不需要动业务配置。
 
+## PhysicalTaskDialog 弹窗（快速复用）
+
+- 位置：`src/views/physical-task/PhysicalTaskDialog.vue`，内部通过 `DynamicFormV2` 构建表单，所有项由 `Map` 配置。
+- 入口：`defineExpose({ open })` 暴露 `open` 方法，支持接收 `{ task?: TaskJob }`（编辑）并返回一个 `Promise<TaskJob>`，成功后可刷新列表。
+- 参数：通过 `:community-options="shequList"` 注入社区数据，表单项使用 `INIT_ITEM` + `childMap` 来映射 Select 选项，状态字段使用 `Map<value,label>` 约定。
+- 示例：
+
+```ts
+const dialogRef = ref<InstanceType<typeof PhysicalTaskDialog>>(null);
+await dialogRef.value?.open({ task: currentRow });
+```
+
 ## 常见问题
 
-- **Q: 为什么强制 Map？**  
+- **Q: 为什么强制 Map？**
   - A: Map 对“有序配置 + 复杂 value（函数/slot）”更稳定，且减少 Object/Map 双分支逻辑，组件内部更简单。
 
-- **Q: slot 怎么传？**  
+- **Q: slot 怎么传？**
   - A: 目前组件内部用 `v-slots` 统一处理；外部若要自定义渲染，请按组件约定将 slot 渲染函数放进 `slotMap/tableSlotMap/childSlotMap`（均为 Map）。
-
-

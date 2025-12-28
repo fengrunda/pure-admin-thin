@@ -29,6 +29,13 @@ export interface PureHttpRequestConfig extends AxiosRequestConfig {
   skipAuthUrls?: string[];
 }
 
+export interface ResponseData<T = any> {
+  status: string;
+  count?: number;
+  data: T;
+  [key: string]: any;
+}
+
 export default class PureHttp {
   setConfig(config: PureHttpRequestConfig): void;
   request<T>(

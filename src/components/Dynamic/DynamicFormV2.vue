@@ -1,5 +1,5 @@
 <script lang="tsx">
-import { computed, defineComponent, h, ref } from "vue";
+import { computed, defineComponent, h, ref, resolveComponent } from "vue";
 import type { DynamicFormItem } from "./schema";
 import { readOnlyFormatter } from "./schema";
 import { checkDynamicPermission } from "./permission";
@@ -95,6 +95,10 @@ export default defineComponent({
       childMap: any,
       childSlotMap: Map<any, any>
     ) => {
+      const ChildCompResolved =
+        typeof childComponent === "string"
+          ? resolveComponent(childComponent)
+          : childComponent;
       const slotPairs = Array.from(childSlotMap || new Map()).map(
         ([key, value]) => {
           if (typeof value === "function") {
@@ -116,7 +120,7 @@ export default defineComponent({
         );
 
         return (
-          <childComponent
+          <ChildCompResolved
             key={key}
             {...value}
             {...(value?.ref ? { ref: value.ref } : {})}
@@ -158,15 +162,33 @@ export default defineComponent({
       } else if (item.readOnlyComponent) {
         component = <item.readOnlyComponent />;
       } else if (item.component) {
-        const listeners = Object.entries(item.listeners || {}).reduce(
+        const MainCompResolved =
+          typeof item.component === "string"
+            ? resolveComponent(item.component)
+            : item.component;
+        const listenersRaw = Object.entries(item.listeners || {}).reduce(
           (acc, [key, value]) => {
             if (/^formItem_/.test(key) && typeof value === "function") {
               const eventName = key.replace(/^formItem_/, "");
               acc[eventName] = (...args: any[]) => value({ args, item });
+            } else {
+              acc[key] = value;
             }
             return acc;
           },
-          { ...(item?.listeners || {}) }
+          {} as Record<string, any>
+        );
+
+        const listeners = Object.entries(listenersRaw).reduce(
+          (acc, [key, value]) => {
+            if (typeof value !== "function") return acc;
+            const eventName = key.startsWith("on")
+              ? key
+              : `on${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+            acc[eventName] = (...args: any[]) => value(...args);
+            return acc;
+          },
+          {} as Record<string, any>
         );
 
         const attrsMap = Object.entries(item.attrs || {}).reduce(
@@ -178,14 +200,17 @@ export default defineComponent({
         );
 
         component = (
-          <div>
+          <div class="d-if ai-c w-100p">
             <div class="d-if ai-c w-100p">
-              <item.component
+              <MainCompResolved
                 key={item.key}
                 {...attrsMap}
                 {...(attrsMap.ref ? { ref: attrsMap.ref } : {})}
-                vModel={item.value}
-                on={listeners}
+                modelValue={item.value}
+                onUpdate:modelValue={(val: any) => {
+                  item.value = val;
+                }}
+                {...listeners}
                 v-slots={slotPairs.reduce(
                   (acc, [slotName, slotRender]) => {
                     if (slotRender) {
@@ -204,7 +229,7 @@ export default defineComponent({
                       item.childSlotMap
                     )
                   : null}
-              </item.component>
+              </MainCompResolved>
               {item.unit && <span class="ml_1 fxg-0 fxsh-0">{item.unit}</span>}
             </div>
             {item.remark && (
@@ -294,6 +319,7 @@ export default defineComponent({
       return (
         <el-form
           ref={formRef}
+          class="dynamic-form-v2"
           {...attrs}
           model={formModel}
           onSubmit={(event: Event) => event.preventDefault()}
@@ -324,6 +350,26 @@ export default defineComponent({
 });
 </script>
 <style scoped>
+.dynamic-form-v2 {
+  width: 100%;
+}
+
+.dynamic-form-v2 :deep(.el-form-item__content) {
+  flex: 1;
+  min-width: 0;
+}
+
+.dynamic-form-v2 :deep(.el-input),
+.dynamic-form-v2 :deep(.el-select),
+.dynamic-form-v2 :deep(.el-date-editor),
+.dynamic-form-v2 :deep(.el-input-number) {
+  width: 100%;
+}
+
+.dynamic-form-v2 :deep(.el-select__wrapper) {
+  width: 100%;
+}
+
 .c-black_40 {
   color: rgb(0 0 0 / 40%);
 }
