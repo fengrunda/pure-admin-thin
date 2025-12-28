@@ -22,6 +22,10 @@ export default defineComponent({
     expandButtonText: {
       type: String,
       default: "展开"
+    },
+    labelWidth: {
+      type: String,
+      default: "120px"
     }
   },
   emits: ["update:formItems"],
@@ -322,6 +326,7 @@ export default defineComponent({
           class="dynamic-form-v2"
           {...attrs}
           model={formModel}
+          label-width={props.labelWidth}
           onSubmit={(event: Event) => event.preventDefault()}
         >
           <div>

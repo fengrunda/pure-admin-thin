@@ -19,9 +19,20 @@ export interface GetCommunityShequListParams {
 }
 
 export const getCommunityShequList = (params?: GetCommunityShequListParams) =>
-  http.get<ResponseData<CommunityShequ[]>, GetCommunityShequListParams>(
-    "/api/community/shequ/list",
-    {
-      params: params || { active_app: "True" }
-    }
+  http.get<ResponseData<CommunityShequ[]>>("/api/community/shequ/list", {
+    params: params || { active_app: "True" }
+  });
+
+export interface UpdateCommunityActiveAppParams {
+  shequ_id: number;
+  active_app: string;
+}
+
+export const updateCommunityActiveApp = (
+  params: UpdateCommunityActiveAppParams
+) =>
+  http.put<ResponseData<any>>(
+    "/api/jyh/shequ/update_active_app",
+    {},
+    { params }
   );

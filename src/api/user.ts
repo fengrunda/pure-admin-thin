@@ -38,22 +38,19 @@ export type RemoteLoginRequest = {
 };
 
 /** jyh登录 */
-/** jyh登录 */
 export const getJYHLogin = (data?: RemoteLoginRequest) => {
   const params = new URLSearchParams();
   if (data?.username) params.append("username", data.username);
   if (data?.password) params.append("password", data.password);
-  return http.request<RemoteLoginResponse>(
-    "post",
-    "/api/jyh/remote-login",
-    { data: params },
-    {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      skipAuth: true
-    }
-  );
+  return http.request<RemoteLoginResponse>({
+    method: "post",
+    url: "/api/jyh/remote-login",
+    data: params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    skipAuth: true
+  });
 };
 
 /** 登录 */
@@ -61,27 +58,22 @@ export const getLogin = (data?: RemoteLoginRequest) => {
   const params = new URLSearchParams();
   if (data?.username) params.append("username", data.username);
   if (data?.password) params.append("password", data.password);
-  return http.request<JwtLoginResponse>(
-    "post",
-    "/auth/jwt/login",
-    { data: params },
-    {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      skipAuth: true
-    }
-  );
+  return http.request<JwtLoginResponse>({
+    method: "post",
+    url: "/auth/jwt/login",
+    data: params,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    skipAuth: true
+  });
 };
 
 /** 获取用户信息 */
 export const getUserInfo = (token?: string) => {
-  return http.request<RemoteLoginUser>(
-    "get",
-    "/users/me",
-    {},
-    {
-      headers: token ? { Authorization: formatToken(token) } : undefined
-    }
-  );
+  return http.request<RemoteLoginUser>({
+    method: "get",
+    url: "/users/me",
+    headers: token ? { Authorization: formatToken(token) } : undefined
+  });
 };

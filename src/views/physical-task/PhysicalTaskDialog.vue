@@ -1,8 +1,8 @@
 <template>
   <el-dialog
+    v-model="dialogVisible"
     append-to-body
     :title="dialogTitle"
-    :visible="dialogVisible"
     width="520px"
     @close="handleCancel"
   >
@@ -30,16 +30,24 @@ import type {
   ShequInfo,
   TaskJob,
   TaskJobCreate,
-  TaskJobUpdate
+  TaskJobUpdate,
+  CommunityTask,
+  CommunityQuestionnaire
 } from "@/api/physicalTask";
 import { createPhysicalTask, updatePhysicalTask } from "@/api/physicalTask";
 
 const props = withDefaults(
   defineProps<{
     communityOptions?: ShequInfo[];
+    communityTasks?: Map<number, CommunityTask>;
+    communityQuestionnaires?: Map<number, CommunityQuestionnaire>;
+    shequKey?: string;
   }>(),
   {
-    communityOptions: () => []
+    communityOptions: () => [],
+    communityTasks: () => new Map(),
+    communityQuestionnaires: () => new Map(),
+    shequKey: ""
   }
 );
 
@@ -48,6 +56,7 @@ const loading = ref(false);
 const formItems = ref(new Map<string, DynamicFormItem>());
 const currentTask = ref<TaskJob | null>(null);
 const dialogTitle = ref("创建体检任务");
+const selectedTask = ref<CommunityTask | null>(null);
 
 let resolveHandler: ((value: TaskJob) => void) | null = null;
 let rejectHandler: (() => void) | null = null;
@@ -83,6 +92,32 @@ const communityChildMap = computed(() => {
   return map;
 });
 
+const taskChildMap = computed(() => {
+  const map = new Map();
+  props.communityTasks.forEach(task => {
+    const label = task.name ?? `任务 ${task.id}`;
+    map.set(task.id, {
+      label,
+      value: task.id
+    });
+  });
+  return map;
+});
+
+const questionnaireChildMap = computed(() => {
+  const map = new Map();
+  // 显示所有可用的问卷（目前阶段，后续可以根据任务关联关系过滤）
+  props.communityQuestionnaires.forEach(questionnaire => {
+    const label =
+      questionnaire.name ?? `问卷 ${questionnaire.questionnaire_id}`;
+    map.set(questionnaire.questionnaire_id, {
+      label,
+      value: questionnaire.questionnaire_id
+    });
+  });
+  return map;
+});
+
 const buildFormItems = (task?: TaskJob) => {
   const map = new Map<string, DynamicFormItem>();
   map.set(
@@ -97,23 +132,54 @@ const buildFormItems = (task?: TaskJob) => {
       attrsFormItem: {
         label: "任务标题",
         rules: [{ required: true, message: "请填写任务标题", trigger: "blur" }]
+      },
+      attrsCol: {
+        span: 24
       }
     })
   );
+  // 任务选择字段
   map.set(
-    "jyh_shequ_id",
+    "jyh_task_id",
     INIT_ITEM({
-      prop: "jyh_shequ_id",
-      value: task?.jyh_shequ_id ?? currentContext?.fixedCommunityId ?? "",
+      prop: "jyh_task_id",
+      value: task?.jyh_task_id ?? "",
       component: "el-select",
       childComponent: "el-option",
-      childMap: communityChildMap.value,
+      childMap: taskChildMap.value,
       attrs: {
-        placeholder: "请选择社区"
+        placeholder: "请选择任务",
+        clearable: true
       },
       attrsFormItem: {
-        label: "所属社区",
-        rules: [{ required: true, message: "请选择社区", trigger: "change" }]
+        label: "选择任务",
+        rules: [{ required: true, message: "请选择任务", trigger: "change" }]
+      },
+      attrsCol: {
+        span: 24
+      }
+    })
+  );
+
+  // 问卷选择字段（根据选中的任务动态更新）
+  map.set(
+    "jyh_questionnaire_id",
+    INIT_ITEM({
+      prop: "jyh_questionnaire_id",
+      value: task?.jyh_questionnaire_id ?? "",
+      component: "el-select",
+      childComponent: "el-option",
+      childMap: questionnaireChildMap.value,
+      attrs: {
+        placeholder: "请选择问卷",
+        clearable: true
+      },
+      attrsFormItem: {
+        label: "选择问卷",
+        rules: [{ required: true, message: "请选择问卷", trigger: "change" }]
+      },
+      attrsCol: {
+        span: 24
       }
     })
   );
@@ -136,6 +202,9 @@ const buildFormItems = (task?: TaskJob) => {
       attrsFormItem: {
         label: "状态",
         rules: [{ required: true, message: "请选择状态", trigger: "change" }]
+      },
+      attrsCol: {
+        span: 24
       }
     })
   );
@@ -148,6 +217,12 @@ const collectFormValues = (): TaskJobCreate => {
     const prop = item.prop || key;
     (data as Record<string, any>)[prop] = item.value;
   });
+
+  // 确保社区 ID 被包含
+  if (currentContext?.fixedCommunityId && !data.jyh_shequ_id) {
+    data.jyh_shequ_id = currentContext.fixedCommunityId;
+  }
+
   return data as TaskJobCreate;
 };
 
@@ -167,6 +242,14 @@ const handleConfirm = async () => {
   const values = collectFormValues();
   if (!values.title) {
     ElMessage.warning("任务标题为必填项");
+    return;
+  }
+  if (!values.jyh_task_id) {
+    ElMessage.warning("请选择任务");
+    return;
+  }
+  if (!values.jyh_questionnaire_id) {
+    ElMessage.warning("请选择问卷");
     return;
   }
   loading.value = true;
@@ -199,23 +282,44 @@ const open = (options?: {
   currentTask.value = options?.task ?? null;
   currentContext = options?.context ?? null;
   dialogTitle.value = currentTask.value ? "编辑体检任务" : "创建体检任务";
+
+  // 检查社区选项是否已加载
+  if (!props.communityOptions || props.communityOptions.length === 0) {
+    ElMessage.warning("社区数据正在加载中，请稍后再试");
+    return Promise.reject(new Error("社区数据未加载"));
+  }
+
+  // 检查社区问卷数据是否已加载
+  if (
+    !props.communityQuestionnaires ||
+    props.communityQuestionnaires.size === 0
+  ) {
+    ElMessage.warning("问卷数据正在加载中，请稍后再试");
+    return Promise.reject(new Error("问卷数据未加载"));
+  }
+
+  // 初始化选中的任务（如果是编辑模式）
+  if (currentTask.value?.jyh_task_id) {
+    selectedTask.value =
+      props.communityTasks.get(currentTask.value.jyh_task_id) || null;
+  } else {
+    selectedTask.value = null;
+  }
+
   buildFormItems(currentTask.value ?? undefined);
+
+  // 确保问卷选项已正确设置到表单中
+  const questionnaireItem = formItems.value.get("jyh_questionnaire_id");
+  if (questionnaireItem) {
+    questionnaireItem.childMap = questionnaireChildMap.value;
+  }
+
   dialogVisible.value = true;
   return new Promise<TaskJob>((resolve, reject) => {
     resolveHandler = resolve;
     rejectHandler = reject;
   });
 };
-
-watch(
-  communityChildMap,
-  () => {
-    if (dialogVisible.value) {
-      buildFormItems(currentTask.value ?? undefined);
-    }
-  },
-  { immediate: false }
-);
 
 defineExpose({ open });
 defineOptions({ name: "PhysicalTaskDialog" });

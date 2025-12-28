@@ -1,5 +1,5 @@
 <template>
-  <div class="physical-task-index">
+  <div class="flex-grow-1 flex-shrink-1 flex flex-col">
     <el-config-provider>
       <PureTableBar
         class="physical-task-index__bar"
@@ -12,7 +12,7 @@
           <el-button type="primary" @click="handleCreate">新建任务</el-button>
         </template>
         <template #default="{ size, dynamicColumns }">
-          <div class="p-4">
+          <div class="p-4 flex-grow-1 flex-shrink-1 flex flex-col">
             <DynamicFormV2 :formItems="filterFormItems">
               <template #buttonBarRight>
                 <el-button
@@ -25,13 +25,29 @@
                 <el-button @click="handleReset">清空</el-button>
               </template>
             </DynamicFormV2>
-            <DynamicTable
-              :data="listPagination.result"
-              :loading="listLoading"
-              :scopedSlots="tableScopedSlots"
-              :size="size"
-              :tableColumnMap="buildTableColumnMap(dynamicColumns)"
-            />
+            <div class="flex-grow-1 flex-shrink-1 flex flex-col relative">
+              <DynamicTable
+                :data="listPagination.result"
+                height="100%"
+                :loading="listLoading"
+                :size="size"
+                :tableColumnMap="buildTableColumnMap(dynamicColumns)"
+              >
+                <template #actions="{ row }">
+                  <el-button size="small" type="text" @click="handleEdit(row)">
+                    编辑
+                  </el-button>
+                  <el-button
+                    class="!text-red-500"
+                    size="small"
+                    type="text"
+                    @click="handleDelete(row)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </DynamicTable>
+            </div>
             <div class="flex justify-end mt-4">
               <el-pagination
                 background
@@ -50,15 +66,22 @@
       <PhysicalTaskDialog
         ref="dialogRef"
         :community-options="communityList"
-        :fixed-community-id="currentCommunityId"
-        :fixed-community-name="currentCommunityName"
+        :community-questionnaires="communityQuestionnaires"
+        :community-tasks="communityTasks"
+        :shequ-key="props.shequ_key"
       />
     </el-config-provider>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+
+const props = withDefaults(defineProps<CommunityPhysicalTaskProps>(), {
+  jyh_shequ_id: 0,
+  shequ_key: "",
+  shequ_name: ""
+});
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useRoute } from "vue-router";
 import DynamicTable from "@/components/Dynamic/DynamicTable.vue";
@@ -68,13 +91,25 @@ import { INIT_COLUMN } from "@/components/Dynamic/table";
 import { PureTableBar } from "@/components/RePureTableBar";
 import PhysicalTaskDialog from "./PhysicalTaskDialog.vue";
 import type { DynamicFormItem } from "@/components/Dynamic/schema";
-import type { ShequInfo, TaskJob } from "@/api/physicalTask";
+import type {
+  ShequInfo,
+  TaskJob,
+  CommunityTask,
+  CommunityQuestionnaire
+} from "@/api/physicalTask";
 import { useListQuery } from "@/hooks/useListQuery";
 import {
   getPhysicalTaskListByCommunity,
   deletePhysicalTask,
-  getShequList
+  getShequList,
+  getCommunityTaskList
 } from "@/api/physicalTask";
+
+interface CommunityPhysicalTaskProps {
+  jyh_shequ_id?: number;
+  shequ_key?: string;
+  shequ_name?: string;
+}
 
 const route = useRoute();
 
@@ -159,7 +194,7 @@ const tableColumns: TableColumnListItem[] = [
     ...INIT_COLUMN({
       prop: "actions",
       label: "操作",
-      width: 180,
+      width: 140,
       fixed: "right",
       slotContent: "actions"
     })
@@ -184,6 +219,10 @@ const buildTableColumnMap = (columns: TableColumnListItem[]) => {
 
 const tasks = ref<TaskJob[]>([]);
 const communityList = ref<ShequInfo[]>([]);
+const communityTasks = ref<Map<number, CommunityTask>>(new Map());
+const communityQuestionnaires = ref<Map<number, CommunityQuestionnaire>>(
+  new Map()
+);
 const dialogRef = ref<InstanceType<typeof PhysicalTaskDialog> | null>(null);
 const {
   params: listParams,
@@ -198,29 +237,9 @@ const {
   defaultPagination: { page: 1, size: 10 }
 });
 
-const currentCommunityId = computed(() => {
-  const paramValue =
-    route.params.jyh_shequ_id ?? route.query.jyh_shequ_id ?? "";
-  if (!paramValue) {
-    return undefined;
-  }
-  const parsed = Number(paramValue);
-  return Number.isNaN(parsed) ? undefined : parsed;
-});
+const currentCommunityId = computed(() => props.jyh_shequ_id || undefined);
 
-const currentCommunityName = computed(() => {
-  const queryName =
-    (route.query.shequName as string) ??
-    (route.query.shequ_name as string) ??
-    (route.params.shequ_name as string);
-  if (queryName) {
-    return queryName;
-  }
-  const matched = communityList.value.find(
-    item => item.id === currentCommunityId.value
-  );
-  return matched?.name ?? matched?.shequ_name ?? "";
-});
+const currentCommunityName = computed(() => props.shequ_name || "");
 
 const pageTitle = computed(() => {
   const name = currentCommunityName.value || "未知社区";
@@ -260,6 +279,46 @@ const loadCommunities = async () => {
   } catch (_error) {
     ElMessage.error("社区列表加载失败");
     communityList.value = [];
+  }
+};
+
+const loadCommunityTasks = async () => {
+  const communityId = currentCommunityId.value;
+  if (!communityId) {
+    communityTasks.value = new Map();
+    communityQuestionnaires.value = new Map();
+    return;
+  }
+  try {
+    const response = await getCommunityTaskList(communityId);
+    const tasksArray = response.data?.tasks || [];
+    const questionnairesArray = response.data?.questionnaires || [];
+
+    // 处理任务数据
+    const tasksMap = new Map<number, CommunityTask>();
+    tasksArray.forEach(task => {
+      tasksMap.set(task.id, {
+        id: task.id,
+        name: task.name
+      });
+    });
+    communityTasks.value = tasksMap;
+
+    // 处理问卷数据
+    const questionnairesMap = new Map<number, CommunityQuestionnaire>();
+    questionnairesArray.forEach(questionnaire => {
+      if (questionnaire.questionnaire_id) {
+        questionnairesMap.set(questionnaire.questionnaire_id, {
+          questionnaire_id: questionnaire.questionnaire_id,
+          name: questionnaire.name
+        });
+      }
+    });
+    communityQuestionnaires.value = questionnairesMap;
+  } catch (_error) {
+    ElMessage.error("社区任务列表加载失败");
+    communityTasks.value = new Map();
+    communityQuestionnaires.value = new Map();
   }
 };
 
@@ -333,37 +392,14 @@ const handleDelete = async (row: TaskJob) => {
       type: "warning"
     });
     await deletePhysicalTask({
-      task_id: key
+      task_id: key,
+      title: row.title || ""
     });
     ElMessage.success("删除成功");
     await loadTasks();
   } catch {
     ElMessage.info("已取消删除");
   }
-};
-
-const tableScopedSlots = {
-  actions: ({ row }: { row: TaskJob }) =>
-    h("div", { class: "physical-task-index__actions" }, [
-      h(
-        "el-button",
-        {
-          type: "text",
-          size: "small",
-          onClick: () => handleEdit(row)
-        },
-        "编辑"
-      ),
-      h(
-        "el-button",
-        {
-          type: "text",
-          size: "small",
-          onClick: () => handleDelete(row)
-        },
-        "删除"
-      )
-    ])
 };
 
 setListParams(collectFilters());
@@ -375,7 +411,7 @@ onMounted(async () => {
 watch(
   currentCommunityId,
   async () => {
-    await loadTasks();
+    await Promise.all([loadTasks(), loadCommunityTasks()]);
   },
   { immediate: true }
 );
@@ -418,10 +454,5 @@ defineOptions({ name: "CommunityConfigPhysicalTask" });
 .physical-task-index__filter-buttons {
   display: flex;
   gap: 8px;
-}
-
-.physical-task-index__actions {
-  display: flex;
-  gap: 4px;
 }
 </style>

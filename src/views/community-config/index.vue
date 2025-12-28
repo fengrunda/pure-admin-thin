@@ -1,29 +1,42 @@
 <template>
-  <div class="community-config-index">
+  <div class="flex-grow-1 flex-shrink-1 flex flex-col">
     <el-config-provider>
       <PureTableBar
-        class="community-config-index__bar"
         :columns="tableColumns"
         tableKey="community-config-table"
         title="社区配置"
         @refresh="loadCommunities"
       >
         <template #buttons>
-          <el-button disabled type="primary">新建社区</el-button>
+          <el-button type="primary" @click="handleAddCommunity">
+            新建社区
+          </el-button>
         </template>
         <template #default="{ size, dynamicColumns }">
-          <div class="p-4">
+          <div class="absolute top-4 left-4 right-4 bottom-4">
             <DynamicTable
               :data="tableData"
+              height="100%"
               :loading="isLoading"
-              :scopedSlots="tableScopedSlots"
               :size="size"
               :tableColumnMap="buildTableColumnMap(dynamicColumns)"
-            />
+            >
+              <template #actions="{ row }">
+                <el-button
+                  size="small"
+                  type="text"
+                  @click="handleConfigure(row)"
+                >
+                  配置
+                </el-button>
+              </template>
+            </DynamicTable>
           </div>
         </template>
       </PureTableBar>
     </el-config-provider>
+
+    <CommunityAddDialog ref="communityAddDialogRef" />
   </div>
 </template>
 
@@ -35,8 +48,11 @@ import { INIT_COLUMN } from "@/components/Dynamic/table";
 import { PureTableBar } from "@/components/RePureTableBar";
 import type { CommunityShequ } from "@/api/community";
 import { getCommunityShequList } from "@/api/community";
+import CommunityAddDialog from "./CommunityAddDialog.vue";
 
 const router = useRouter();
+const communityAddDialogRef = ref();
+
 type TableColumnListItem = Record<string, any> & {
   columnKey?: string;
   prop?: string;
@@ -116,7 +132,7 @@ const tableColumns: TableColumnListItem[] = [
     ...INIT_COLUMN({
       prop: "actions",
       label: "操作",
-      width: 120,
+      width: 80,
       fixed: "right",
       slotContent: "actions"
     })
@@ -166,22 +182,22 @@ const handleConfigure = (row: CommunityShequ) => {
     name: "CommunityConfigPhysicalTask",
     params: { jyh_shequ_id: row.id },
     query: {
-      shequName: row.name ?? row.shequ_name ?? ""
+      shequ_key: row.key ?? "",
+      shequName: row.name ?? row.shequ_name ?? row.key ?? ""
     }
   });
 };
 
-const tableScopedSlots = {
-  actions: ({ row }: { row: CommunityShequ }) =>
-    h(
-      "el-button",
-      {
-        type: "primary",
-        size: "mini",
-        onClick: () => handleConfigure(row)
-      },
-      "配置"
-    )
+const handleAddCommunity = async () => {
+  console.log("handleAddCommunity called");
+  console.log("communityAddDialogRef.value:", communityAddDialogRef.value);
+  try {
+    await communityAddDialogRef.value?.open();
+    await loadCommunities();
+  } catch (error) {
+    console.log("handleAddCommunity error:", error);
+    // 弹窗取消或失败，无需额外处理
+  }
 };
 
 onMounted(async () => {
@@ -192,10 +208,6 @@ defineOptions({ name: "CommunityConfigIndex" });
 </script>
 
 <style scoped lang="scss">
-.community-config-index__bar {
-  background: var(--el-color-white);
-}
-
 .community-config-index__table {
   width: 100%;
 }

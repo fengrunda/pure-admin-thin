@@ -9,7 +9,7 @@
       v-for="[key, item] in columnEntries"
       :key="key"
       :item="item"
-      :root-scoped-slots="scopedSlots"
+      :root-scoped-slots="mergedScopedSlots"
     />
   </el-table>
 </template>
@@ -37,12 +37,19 @@ export default defineComponent({
       default: () => ({})
     }
   },
-  setup(props) {
+  setup(props, { slots }) {
     const columnEntries = computed<[PropertyKey, any][]>(
       () => Array.from(props.tableColumnMap.entries()) as [PropertyKey, any][]
     );
+
+    const mergedScopedSlots = computed<Record<string, any>>(() => ({
+      ...(slots || {}),
+      ...(props.scopedSlots || {})
+    }));
+
     return {
-      columnEntries
+      columnEntries,
+      mergedScopedSlots
     };
   }
 });

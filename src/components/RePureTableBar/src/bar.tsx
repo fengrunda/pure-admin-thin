@@ -251,12 +251,12 @@ export default defineComponent({
           {...attrs}
           class={[
             "w-full",
-            "px-2",
-            "pb-2",
+            "flex",
+            "flex-col",
+            "flex-grow-1",
+            "flex-shrink-1",
             "bg-bg_color",
-            isFullscreen.value
-              ? ["h-full!", "z-2002", "fixed", "inset-0"]
-              : "mt-2"
+            isFullscreen.value ? ["h-full!", "z-2002", "fixed", "inset-0"] : ""
           ]}
         >
           <div class="flex justify-between w-full h-[60px] p-4">
@@ -382,10 +382,12 @@ export default defineComponent({
               />
             </div>
           </div>
-          {slots.default({
-            size: size.value,
-            dynamicColumns: dynamicColumns.value
-          })}
+          <div class="flex-grow-1 flex-shrink-1 flex flex-col relative">
+            {slots.default({
+              size: size.value,
+              dynamicColumns: dynamicColumns.value
+            })}
+          </div>
         </div>
       </>
     );

@@ -1,0 +1,41 @@
+---
+globs: src/router/*/**.ts
+alwaysApply: false
+---
+# 路由配置指引（pure-admin-thin）
+
+### 目标
+- 在 pure-admin 会**拍平/格式化为二级路由**的前提下，保证 **菜单高亮、面包屑、keepAlive、标签页** 行为稳定。
+- 约定“业务层级”与“路由书写”分离：**路由可平级**，但 **path/meta/props** 必须体现归属与上下文。
+
+### 核心约定（强制）
+- **子路由一律写绝对 `path`**：避免拍平后丢前缀（详见 `src/router/README.md`）。
+- **路由 `name` 唯一且与页面 `defineOptions({ name })` 完全一致**：影响 keepAlive/标签页 key。
+- **平级路由但路径体现层级**：不一定挂 `children`，但 URL 必须表达业务归属（例如体检任务子页仍保留 `/physical-task/...`）。
+
+### 本项目“社区配置 → 体检任务 → 功能配置”实践（推荐范式）
+- **一级菜单入口**：`/community-config/list` 显示在菜单。
+- **体检任务页（隐藏菜单）**：
+  - `path`: `/community-config/:jyh_shequ_id/physical-task`
+  - `meta`: `showLink:false` + `activePath:"/community-config/list"` +（可选）`keepAlive:true`
+  - `props`: 统一透传 `jyh_shequ_id`、`shequ_name`（来自 params/query）。
+- **体检任务子页（路由平级，但路径体现归属）**：
+  - 列表：`/community-config/:jyh_shequ_id/physical-task/:task_id/function-config/list`
+  - 详情：`/community-config/:jyh_shequ_id/physical-task/:task_id/function-config/:config_id/config-page`
+  - `meta`: 继承同样的 `activePath`/`showLink:false`，并复用同一套 `breadcrumbParam`（插入社区名称）。
+  - `props`: 在透传社区上下文基础上，再补齐 `task_id` / `config_id`。
+
+### meta 推荐配置
+- **`meta.showLink: false`**：详情/中间页不出现在菜单。
+- **`meta.activePath`**：进入隐藏页时让菜单仍高亮到入口菜单（通常是列表页）。
+- **`meta.keepAlive`**：仅对需要缓存的“主列表/主页面”开启；详情页谨慎开启。
+- **`meta.breadcrumbParam`**：用于动态参数（如社区 id）在面包屑中插入“名称段”；建议抽常量复用，避免三处不一致。
+
+### params / props 约定
+- **动态段命名统一**：`jyh_shequ_id`、`task_id`、`config_id`（与后端/列表字段一致）。
+- **props 做显式转换**：`Number(route.params.xxx)`，避免字符串导致接口/逻辑分支出错。
+- **上下文透传优先**：子页不要自己再从 `route` 里拼社区名/社区 id，统一由路由 `props` 提供（减少重复与遗漏）。
+
+### 何时需要 `LayRouterView`（不推荐默认使用）
+- 只有当你**必须要一个“中间层路由节点”**（例如面包屑必须出现某一层且不想在子路由重复 meta）时再引入。
+- 若中间层不渲染实际页面，且 meta 可在子路由稳定表达，则优先**平级路由 + 路径体现层级**（本次采用）。

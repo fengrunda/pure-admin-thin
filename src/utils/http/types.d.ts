@@ -2,7 +2,8 @@ import type {
   Method,
   AxiosError,
   AxiosResponse,
-  AxiosRequestConfig
+  AxiosRequestConfig,
+  AxiosInstance
 } from "axios";
 
 export type resultType = {
@@ -36,22 +37,13 @@ export interface ResponseData<T = any> {
   [key: string]: any;
 }
 
-export default class PureHttp {
-  setConfig(config: PureHttpRequestConfig): void;
-  request<T>(
-    method: RequestMethods,
-    url: string,
-    param?: AxiosRequestConfig,
-    axiosConfig?: PureHttpRequestConfig
-  ): Promise<T>;
-  post<T, P>(
-    url: string,
-    params?: P,
-    config?: PureHttpRequestConfig
-  ): Promise<T>;
-  get<T, P>(
-    url: string,
-    params?: P,
-    config?: PureHttpRequestConfig
-  ): Promise<T>;
+export interface PureHttpInstance extends AxiosInstance {
+  request<T = any>(config: PureHttpRequestConfig): Promise<T>;
+  get<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
+  head<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
+  options<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
+  patch<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
 }

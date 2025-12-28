@@ -84,6 +84,15 @@ const transitionMain = defineComponent({
       transitions.value(this.route)?.name || "fade-transform";
     const enterTransition = transitions.value(this.route)?.enterTransition;
     const leaveTransition = transitions.value(this.route)?.leaveTransition;
+
+    // 当 transitionName 为 "none" 时，直接返回子节点，不包裹 Transition（避免 HMR 时的 DOM 引用问题）
+    const children = this.$slots.default?.() ?? [];
+    const firstChild = children.length ? children[0] : null;
+
+    if (transitionName === "none") {
+      return firstChild;
+    }
+
     return h(
       Transition,
       {
@@ -98,7 +107,9 @@ const transitionMain = defineComponent({
         appear: true
       },
       {
-        default: () => [this.$slots.default()]
+        // Transition 语义上只支持单个子节点；slots.default() 在 Vue3 中返回 VNode 数组
+        // HMR / 频繁 patch 时若传入数组/fragment，可能触发 leavingVNode.el 为空（例如：leavingVNode.el[leaveCbKey]）
+        default: () => firstChild
       }
     );
   }
@@ -136,7 +147,7 @@ const transitionMain = defineComponent({
               >
                 <BackTopIcon />
               </el-backtop>
-              <div class="grow">
+              <div class="flex-grow-1 flex-shrink-1 flex flex-col">
                 <transitionMain :route="route">
                   <keep-alive
                     v-if="isKeepAlive"

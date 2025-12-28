@@ -6,7 +6,9 @@ type Result = {
 };
 
 export const getAsyncRoutes = () => {
-  return http.request<Result>("get", "/get-async-routes", {
+  return http.request<Result>({
+    method: "get",
+    url: "/get-async-routes",
     baseURL: ""
   });
 };

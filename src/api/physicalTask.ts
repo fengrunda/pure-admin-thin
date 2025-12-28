@@ -47,34 +47,82 @@ export interface GetShequListParams {
   active_app?: string | null; // 过滤用的 active_app
 }
 
+export interface CommunityTaskItem {
+  id: number;
+  task_id?: number;
+  name?: string;
+  shequ_id?: number;
+  shequ_name?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  status?: string | null;
+  api_path?: string | null;
+  type?: string | null;
+  pods?: any;
+}
+
+export interface CommunityQuestionnaireItem {
+  id: number;
+  questionnaire_id?: number;
+  task_id?: number; // 关联的任务 ID
+  name?: string;
+  description?: string | null;
+  shequ_id?: number;
+  shequ_name?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  status?: string | null;
+  api_path?: string | null;
+  type?: string | null;
+}
+
+export interface CommunityTaskResponse {
+  status: string;
+  count: number;
+  questionnaire_count: number;
+  data: {
+    tasks: CommunityTaskItem[];
+    questionnaires: CommunityQuestionnaireItem[];
+  };
+}
+
+export interface CommunityTask {
+  id: number; // 任务 ID
+  name?: string; // 任务名称
+}
+
+export interface CommunityQuestionnaire {
+  questionnaire_id: number;
+  name?: string;
+}
+
 export const getPhysicalTaskList = () =>
-  http.get<TaskJob[], any>("/jol/api/task/list");
+  http.get<TaskJob[]>("/jol/api/task/list");
 
 export const getPhysicalTaskListByCommunity = (jyh_shequ_id: number) =>
-  http.get<TaskJob[], any>(`/jol/api/task/list/jyh_shequ_id/${jyh_shequ_id}`);
+  http.get<TaskJob[]>(`/jol/api/task/list/jyh_shequ_id/${jyh_shequ_id}`);
 
 export const createPhysicalTask = (payload: TaskJobCreate) =>
-  http.post<TaskJob, TaskJobCreate>("/jol/api/task/create", {
-    data: payload
-  });
+  http.post<TaskJob>("/jol/api/task/create", payload);
 
 export const updatePhysicalTask = (payload: TaskJobUpdate) =>
-  http.post<TaskJob, TaskJobUpdate>("/jol/api/job/update", {
-    data: payload
-  });
+  http.post<TaskJob>("/jol/api/job/update", payload);
 
 export const deletePhysicalTask = (payload: {
   task_id: number;
   id?: string | null;
-}) =>
-  http.post<TaskJob, { task_id: number; id?: string | null }>(
-    "/jol/api/job/delete",
-    {
-      data: payload
-    }
-  );
+  title?: string;
+}) => http.post<TaskJob>("/jol/api/job/delete", payload);
 
 export const getShequList = (params?: GetShequListParams) =>
-  http.get<ShequInfo[], any>("/api/jyh/shequ/list", {
+  http.get<ShequInfo[]>("/api/jyh/shequ/list", {
     params: params || undefined
   });
+
+export const getCommunityTaskList = (jyh_shequ_id: number) =>
+  http.get<CommunityTaskResponse>("/api/jyh/task/local/list", {
+    params: { shequ_id: jyh_shequ_id }
+  });
+
+export const getCommunityTaskListByKey = (shequ_key: string) =>
+  http.get<CommunityTask[]>(`/api/jyh/shequ/task/list/${shequ_key}`);
