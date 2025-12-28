@@ -43,7 +43,19 @@ export interface PureHttpInstance extends AxiosInstance {
   delete<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
   head<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
   options<T = any>(url: string, config?: PureHttpRequestConfig): Promise<T>;
-  post<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
-  put<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
-  patch<T = any>(url: string, data?: any, config?: PureHttpRequestConfig): Promise<T>;
+  post<T = any>(
+    url: string,
+    data?: any,
+    config?: PureHttpRequestConfig
+  ): Promise<T>;
+  put<T = any>(
+    url: string,
+    data?: any,
+    config?: PureHttpRequestConfig
+  ): Promise<T>;
+  patch<T = any>(
+    url: string,
+    data?: any,
+    config?: PureHttpRequestConfig
+  ): Promise<T>;
 }
