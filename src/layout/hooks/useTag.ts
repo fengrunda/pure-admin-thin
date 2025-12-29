@@ -86,11 +86,12 @@ export function useTags() {
   };
 
   const getTagKey = (raw: any) => {
-    const name = raw?.name ? String(raw.name) : "";
+    // 使用 path + query + params 作为唯一标识，不使用 name
+    // 因为 redirect/别名路由会导致同一页面有不同 name
     const path = raw?.path ? String(raw.path) : "";
-    const q = stableStringify(raw?.query);
-    const p = stableStringify(normalizeParams(raw?.params));
-    return `${name}|${path}|q:${q}|p:${p}`;
+    const q = stableStringify(raw?.query ?? {});
+    const p = stableStringify(normalizeParams(raw?.params ?? {}));
+    return `${path}|q:${q}|p:${p}`;
   };
 
   const currentTagKey = computed(() =>
@@ -167,8 +168,7 @@ export function useTags() {
   });
 
   const iconIsActive = computed(() => {
-    return (item, index) => {
-      if (index === 0) return;
+    return (item, _index) => {
       return conditionHandle(item, true, false);
     };
   });
@@ -276,6 +276,8 @@ export function useTags() {
     onMounted,
     onMouseenter,
     onMouseleave,
-    onContentFullScreen
+    onContentFullScreen,
+    currentTagKey,
+    getTagKey
   };
 }

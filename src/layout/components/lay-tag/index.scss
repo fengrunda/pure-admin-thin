@@ -115,6 +115,11 @@
       .fixed-tag {
         padding: 0 12px;
       }
+
+      .first-tag {
+        min-width: auto;
+        padding: 0 12px !important;
+      }
     }
   }
 

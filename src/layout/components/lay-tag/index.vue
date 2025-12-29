@@ -10,7 +10,15 @@ import { handleAliveRoute, getTopMenu } from "@/router/utils";
 import { useSettingStoreHook } from "@/store/modules/settings";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { usePermissionStoreHook } from "@/store/modules/permission";
-import { ref, watch, unref, toRaw, nextTick, onBeforeUnmount } from "vue";
+import {
+  ref,
+  watch,
+  unref,
+  toRaw,
+  nextTick,
+  onBeforeUnmount,
+  computed
+} from "vue";
 import {
   delay,
   isEqual,
@@ -51,7 +59,9 @@ const {
   onMounted,
   onMouseenter,
   onMouseleave,
-  onContentFullScreen
+  onContentFullScreen,
+  currentTagKey: currentRouteKeyFromHook,
+  getTagKey: getTagKeyFromHook
 } = useTags();
 
 const tabDom = ref();
@@ -66,23 +76,10 @@ const fixedTags = [
   ...usePermissionStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
 ];
 
-const stableStringify = (input: any): string => {
-  if (input == null) return "";
-  if (typeof input !== "object") return String(input);
-  if (Array.isArray(input)) return `[${input.map(stableStringify).join(",")}]`;
-  const keys = Object.keys(input).sort();
-  return `{${keys
-    .map(k => `${k}:${stableStringify((input as any)[k])}`)
-    .join(",")}}`;
-};
-
-const getTagKey = (tag: any): string => {
-  const name = tag?.name ? String(tag.name) : "";
-  const path = tag?.path ? String(tag.path) : "";
-  const q = stableStringify(tag?.query);
-  const p = stableStringify(tag?.params);
-  return `${name}|${path}|q:${q}|p:${p}`;
-};
+// 复用 hook 里的逻辑和响应式 computed
+const getTagKey = getTagKeyFromHook;
+// 用 computed 包装一下，确保在模板里能正确响应
+const currentRouteKey = computed(() => currentRouteKeyFromHook.value);
 
 const normalizeParams = (params?: Record<string, any>) => {
   const source = params ?? {};
@@ -112,16 +109,9 @@ const isSameTag = (a: any, b: any): boolean => {
 
 const dynamicTagView = async () => {
   await nextTick();
+  const currentKey = currentRouteKey.value;
   const index = multiTags.value.findIndex(item => {
-    return isSameTag(
-      {
-        name: route.name,
-        path: route.path,
-        query: route.query,
-        params: route.params
-      },
-      item
-    );
+    return getTagKey(item) === currentKey;
   });
   moveToView(index);
 };
@@ -577,10 +567,14 @@ onClickOutside(contextmenuRef, closeMenu, {
   detectIframe: true
 });
 
-watch(route, () => {
-  activeIndex.value = -1;
-  dynamicTagView();
-});
+watch(
+  () => [route.path, route.query, route.params, route.name],
+  () => {
+    activeIndex.value = -1;
+    dynamicTagView();
+  },
+  { deep: true, immediate: false }
+);
 
 onMounted(() => {
   if (!instance) return;
@@ -637,9 +631,10 @@ onBeforeUnmount(() => {
           :ref="'dynamic' + index"
           :class="[
             'scroll-item is-closable',
-            linkIsActive(item),
+            getTagKey(item) === currentRouteKey ? 'is-active' : '',
             showModel === 'chrome' && 'chrome-item',
-            isFixedTag(item) && 'fixed-tag'
+            isFixedTag(item) && 'fixed-tag',
+            index === 0 && 'first-tag'
           ]"
           @click="tagOnClick(item)"
           @contextmenu.prevent="openMenu(item, $event)"
@@ -654,10 +649,9 @@ onBeforeUnmount(() => {
             </span>
             <span
               v-if="
-                isFixedTag(item)
-                  ? false
-                  : iconIsActive(item, index) ||
-                    (index === activeIndex && index !== 0)
+                !isFixedTag(item) &&
+                index !== 0 &&
+                (iconIsActive(item, index) || index === activeIndex)
               "
               class="el-icon-close"
               @click.stop="deleteMenu(item)"
@@ -667,7 +661,9 @@ onBeforeUnmount(() => {
             <span
               v-if="showModel !== 'card'"
               :ref="'schedule' + index"
-              :class="[scheduleIsActive(item)]"
+              :class="[
+                getTagKey(item) === currentRouteKey ? 'schedule-active' : ''
+              ]"
             />
           </template>
           <div v-else class="chrome-tab">

@@ -242,6 +242,7 @@ router.afterEach(to => {
   const externalLink = isUrl(to?.name as string);
   if (externalLink) return;
   if (to.path === "/login") return;
+  if (to.path.startsWith("/redirect")) return; // 忽略 redirect 路由
   if (!to?.meta?.title) return;
   useMultiTagsStoreHook().handleTags("push", {
     path: to.path,
